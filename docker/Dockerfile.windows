@@ -1,0 +1,59 @@
+# Use the official Windows Server image as the base
+FROM mcr.microsoft.com/windows/servercore:ltsc2019-amd64
+# FROM mcr.microsoft.com/windows/server:ltsc2022-KB5049983-amd64
+# FROM mcr.microsoft.com/windows/server:ltsc2025-KB5050009-amd64
+
+LABEL maintainer="Nkumbe Aurelien <nkaurelien@gmail.com>"
+LABEL fonction="Webmethods Developer and Integrator"
+LABEL compagny="Wilow"
+LABEL country="France"
+
+ARG CC_INSTALLER_PATH
+ARG CC_ADMIN_PASSWORD="manage123"
+ARG CC_ADMIN_HOST="localhost"
+
+# Set installer label using basename from path
+LABEL installer=$CC_INSTALLER_PATH
+
+# Create a directory for the Command Central installation as Administrator
+USER ContainerAdministrator
+
+# Create a custom user with a specific SID (Security Identifier)
+RUN net user /add wmuser manage123 && \
+    net localgroup administrators wmuser /add
+
+# Create a directory for the Command Central installation
+RUN mkdir C:\opt\SAGCommandCentral
+RUN mkdir C:\opt\SAGCommandCentral\installer
+
+# Set owner and group of the Command Central directory
+RUN icacls C:\opt\SAGCommandCentral /grant wmuser:F
+
+# Switch to the custom user
+USER wmuser
+
+# Set the workdir
+WORKDIR C:\Users\wmuser
+
+# Create a directory for the installer
+RUN mkdir C:\Users\wmuser\installer
+
+# Copy the script to the container
+COPY $CC_INSTALLER_PATH C:\Users\wmuser\installer\installer.bat
+
+# Make the script executable (if needed, use PowerShell to set execution policy)
+# RUN powershell -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force"
+
+# Run the installer script (commented out for now)
+# RUN C:\Users\wmuser\installer\installer.bat -d C:\opt\SAGCommandCentral -H %CC_ADMIN_HOST% -c 8090 -C 8091 -s 8092 -S 8093 -p %CC_ADMIN_PASSWORD% --accept-license
+
+# Remove the installer
+RUN rmdir /s /q C:\Users\wmuser\installer
+
+# Expose the Command Central ports
+EXPOSE 8090 8091 8092 8093 8094 8095
+
+# Print the user information and directory listing
+CMD echo Inside Container: && \
+    echo User: %USERNAME% && \
+    dir C:\opt\SAGCommandCentral

@@ -1,0 +1,28 @@
+services:
+  cc-linux:
+    container_name: "sag-command-central"
+    # command: /opt/SAGCommandCentral/profiles/CCE/bin/startup.sh
+    command: /opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/CCE/configuration/wrapper.conf
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - CC_INSTALLER_PATH=installer/cc-def-10.15-fix8-lnxamd64.sh
+        # - CC_ADMIN_HOST=sagbase.wilow.local
+    ports: # 8090 8091 8092 8093 8094 8095
+      - "8091:8091"
+      - "8090:8090"
+      # - "8092:8092"
+      
+
+  # cc-win:
+  #   container_name: "sag-command-central"
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.windows
+  #     args:
+  #       - CC_INSTALLER_PATH=installer/cc-def-10.15-fix8-w64.bat
+  #       - CC_ADMIN_HOST=sagbase.wilow.local
+  #   ports:
+  #     - "8091:8091"
+      
