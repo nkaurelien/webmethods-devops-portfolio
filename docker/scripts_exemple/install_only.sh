@@ -1,9 +1,16 @@
 #!/bin/bash
 
 # Set default values
-CC_INSTALLER_PATH="/path/to/installer.sh"
+CC_INSTALLER_PATH="../installer/cc-def-10.15-fix8-lnxamd64.sh"
 CC_ADMIN_PASSWORD="manage123"
 CC_ADMIN_HOST="sagbase.local"
+CC_INSTALL_DIR="/opt/SAGCommandCentral"
+WMUSER_HOME="/home/wmuser"
+LOG_DIR="${WMUSER_HOME}/logs"
+WMUSER_UID=1234
+WMUSER_GID=1234
+WMUSER_GROUP="sagwm"
+WMUSER_NAME="wmuser"
 
 # Function to add entry to /etc/hosts if CC_ADMIN_HOST ends with .local
 add_host_entry() {
@@ -14,26 +21,24 @@ add_host_entry() {
     fi
 }
 
-# Create a custom user with UID 1234 and GID 1234
+# Create a custom user with specified UID and GID
 create_user() {
-    groupadd -g 1234 sagwm
-    useradd -m -u 1234 -g sagwm wmuser
+    groupadd -g $WMUSER_GID $WMUSER_GROUP
+    useradd -m -u $WMUSER_UID -g $WMUSER_GROUP $WMUSER_NAME
 }
 
 # Create directories and set permissions
 create_directories() {
-    mkdir -p /opt/SAGCommandCentral
-    mkdir -p /opt/SAGCommandCentral/installer
-    chown -R 1234:1234 /opt/SAGCommandCentral
-    mkdir -p /home/wmuser/logs
+    mkdir -p $CC_INSTALL_DIR
+    chown -R $WMUSER_UID:$WMUSER_GID $CC_INSTALL_DIR
+    mkdir -p $LOG_DIR
+    chown -R $WMUSER_UID:$WMUSER_GID $LOG_DIR
 }
 
-# Copy and run the installer script
+# Run the installer script
 run_installer() {
-    cp $CC_INSTALLER_PATH /home/wmuser/installer/installer.sh
-    chmod +x /home/wmuser/installer/installer.sh
-    su - wmuser -c "/home/wmuser/installer/installer.sh -d /opt/SAGCommandCentral -H $CC_ADMIN_HOST -c 8090 -C 8091 -s 8092 -S 8093 -p $CC_ADMIN_PASSWORD --accept-license"
-    rm -rf /home/wmuser/installer
+    chmod +x $CC_INSTALLER_PATH
+    su - $WMUSER_NAME -c "$CC_INSTALLER_PATH -d $CC_INSTALL_DIR -H $CC_ADMIN_HOST -c 8090 -C 8091 -s 8092 -S 8093 -p $CC_ADMIN_PASSWORD --accept-license"
 }
 
 # Main script execution
