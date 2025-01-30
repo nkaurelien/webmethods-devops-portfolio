@@ -28,6 +28,9 @@ RUN mkdir -p /opt/SAGCommandCentral/installer
 # set owner and group of the Command Central directory
 RUN chown -R 1234:1234 /opt/SAGCommandCentral
 
+# Install supervisord
+RUN apt-get update && apt-get install -y supervisor
+
 # Switch to the custom user
 USER wmuser
 
@@ -46,58 +49,44 @@ RUN /home/wmuser/installer/installer.sh -d /opt/SAGCommandCentral -H $CC_ADMIN_H
 # remove the installer
 RUN rm -rf /home/wmuser/installer
 
+# Create a directory for supervisord logs
+RUN mkdir -p /home/wmuser/logs/supervisor
+
 # Expose the Command Central ports
 EXPOSE 8090 8091 8092 8093 8094 8095
 
-# Switch back to root to create the service unit files
+# Switch back to root to create the supervisord configuration
 USER root
 
-# Create the Command Central service unit file
-RUN cat <<EOF > /etc/systemd/system/commandcentral.service
-[Unit]
-Description=Software AG Command Central Server
-After=network.target
+# Create the supervisord configuration file
+RUN mkdir -p /etc/supervisor/conf.d
+RUN cat <<EOF > /etc/supervisor/conf.d/supervisord.conf
+[supervisord]
+nodaemon=true
+logfile=/home/wmuser/logs/supervisor/supervisord.log
+logfile_maxbytes=50MB
+logfile_backups=10
+loglevel=info
 
-[Service]
-User=wmuser
-Group=sagwm
-ExecStart=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/CCE/configuration/wrapper.conf
-Restart=always
+[program:commandcentral]
+command=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/CCE/configuration/wrapper.conf
+autostart=true
+autorestart=true
+user=wmuser
+stdout_logfile=/home/wmuser/logs/supervisor/commandcentral.log
+stderr_logfile=/home/wmuser/logs/supervisor/commandcentral_err.log
 
-[Install]
-WantedBy=multi-user.target
+[program:platformmanager]
+command=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/PM/configuration/wrapper.conf
+autostart=true
+autorestart=true
+user=wmuser
+stdout_logfile=/home/wmuser/logs/supervisor/platformmanager.log
+stderr_logfile=/home/wmuser/logs/supervisor/platformmanager_err.log
 EOF
-
-# Create the Platform Manager service unit file
-RUN cat <<EOF > /etc/systemd/system/platformmanager.service
-[Unit]
-Description=Software AG Platform Manager
-After=network.target
-
-[Service]
-User=wmuser
-Group=sagwm
-ExecStart=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/SPM/configuration/wrapper.conf
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-
-# Create a script to start the services and keep the container running
-RUN cat <<'EOF' > /usr/local/bin/start-services.sh
-#!/bin/bash
-systemctl start commandcentral.service
-systemctl start platformmanager.service
-tail -f /dev/null
-EOF
-
-# Make the script executable
-RUN chmod +x /usr/local/bin/start-services.sh
 
 # Switch back to the custom user
 USER wmuser
 
-# Start the services and keep the container running
-CMD ["/usr/local/bin/start-services.sh"]
+# Start supervisord in the foreground with the full path
+CMD ["/usr/bin/supervisord", "-n"]
