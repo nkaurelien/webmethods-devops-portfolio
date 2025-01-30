@@ -1,6 +1,19 @@
 # sagwm-command-central
 
+Build images
+```console
+docker compose build --no-cache
+or
+docker build -t sag-cc -f Dockerfile .
 
+```
+
+Containers run or stop (cleaning local images)
+
+```console
+docker compose up
+docker compose down --rmi local
+```
 
 ## Getting started
 

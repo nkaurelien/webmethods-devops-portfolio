@@ -8,7 +8,11 @@ LABEL country="France"
 
 ARG CC_INSTALLER_PATH
 ARG CC_ADMIN_PASSWORD="manage123"
-ARG CC_ADMIN_HOST="localhost"
+ARG CC_ADMIN_HOST="sagbase.local"
+
+# Set default environment variables
+ENV CC_ADMIN_HOST=${CC_ADMIN_HOST}
+ENV CC_ADMIN_PASSWORD=${CC_ADMIN_PASSWORD}
 
 # set installer label using basename form path
 # LABEL installer=`basename $CC_INSTALLER_PATH`
@@ -30,6 +34,13 @@ RUN chown -R 1234:1234 /opt/SAGCommandCentral
 
 # Install supervisord
 RUN apt-get update && apt-get install -y supervisor
+
+# Add entry to /etc/hosts if CC_ADMIN_HOST ends with .local
+RUN if [[ "$CC_ADMIN_HOST" == *.local ]]; then \
+    echo "" >> /etc/hosts; \
+    echo "# Custom entries for Command Central" >> /etc/hosts; \
+    echo "127.0.0.1    $CC_ADMIN_HOST" >> /etc/hosts; \
+    fi
 
 # Switch to the custom user
 USER wmuser
@@ -84,9 +95,6 @@ user=wmuser
 stdout_logfile=/home/wmuser/logs/supervisor/platformmanager.log
 stderr_logfile=/home/wmuser/logs/supervisor/platformmanager_err.log
 EOF
-
-# Switch back to the custom user
-USER wmuser
 
 # Start supervisord in the foreground with the full path
 CMD ["/usr/bin/supervisord", "-n"]
