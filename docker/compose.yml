@@ -1,18 +1,4 @@
 services:
-  sagwm-command-central:
-    container_name: "sagwm-command-central"
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - CC_INSTALLER_PATH=installer/cc-def-10.15-fix8-lnxamd64.sh
-        # - CC_ADMIN_HOST=sagbase.wilow.local
-    # command: sh /opt/SAGCommandCentral/profiles/CCE/bin/startup.sh 
-    ports: # 8090 8091 8092 8093 8094 8095
-      - "8891:8091"
-      - "8890:8090"      
-
-
   sagwm-command-central-supervisor:
     container_name: "sagwm-command-central-supervisor"
     build:
@@ -25,15 +11,3 @@ services:
     ports: # 8090 8091 8092 8093 8094 8095
       - "9091:8091"
       - "9090:8090"      
-
-  # sagwm-command-central-win:
-  #   container_name: "sagwm-command-central-win"
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.windows
-  #     args:
-  #       - CC_INSTALLER_PATH=installer/cc-def-10.15-fix8-w64.bat
-  #       - CC_ADMIN_HOST=sagbase.wilow.local
-  #   ports:
-  #     - "8091:8091"
-      

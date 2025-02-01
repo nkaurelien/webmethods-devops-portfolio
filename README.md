@@ -1,54 +1,53 @@
 # sagwm-command-central
 
-## Build images
+## Build image
 
 ```console
-docker compose build --no-cache
+docker compose build sagwm-command-central-supervisor --no-cache
 # OR
 
-docker build -t sag-cc -f Dockerfile .
-
+docker build -t sag-cc -f Dockerfile.supervisor .
 # OR
 
 docker build --build-arg CC_INSTALLER_PATH=installer/cc-def-10.15-fix8-lnxamd64.sh \
              --build-arg CC_ADMIN_PASSWORD=secret \
              --build-arg CC_ADMIN_HOST=localhost \
-             --build-arg PORT_8090=8090 \
-             --build-arg PORT_8091=8091 \
-             --build-arg PORT_8092=8092 \
-             --build-arg PORT_8093=8093 \
-             --build-arg PORT_8094=8094 \
              -t yourimage:tag .
 
 ```
 
-Containers run or stop (cleaning local images)
+## Containers run or stop (cleaning local images)
 
 ```console
-docker compose up
-docker compose down --remove-orphans --rmi local
+docker compose up sagwm-command-central-supervisor -d
+docker compose down --remove-orphans # --rmi local
 ```
 
 Check the running and supervisord status:
 ```console
-docker compose exec -it sagwm-command-central ps aux
-docker compose exec -it sagwm-command-central supervisorctl status
+docker compose exec -it sagwm-command-central-supervisor ps -aux
+docker compose exec -it sagwm-command-central-supervisor supervisorctl status
 
 ```
 
 Check logs
 ```console
-docker compose exec -it sagwm-command-central cat /home/wmuser/logs/supervisor/commandcentral.log
-docker compose exec -it sagwm-command-central cat /home/wmuser/logs/supervisor/commandcentral_err.log
-docker compose exec -it sagwm-command-central cat /home/wmuser/logs/supervisor/platformmanager.log
-docker compose exec -it sagwm-command-central cat /home/wmuser/logs/supervisor/platformmanager_err.log
+docker compose exec -it sagwm-command-central-supervisor cat /var/log/supervisor/commandcentral_output.log
+docker compose exec -it sagwm-command-central-supervisor cat /var/log/supervisor/commandcentral_output.err.log
+docker compose exec -it sagwm-command-central-supervisor cat /var/log/supervisor/platformmanager_output.log
+docker compose exec -it sagwm-command-central-supervisor cat /var/log/supervisor/platformmanager_output.err.log
 
 ```
 
-Run Commands Manually inside container
+check which ports are open and listening inside a Docker container on Ubuntu20.04
+
 ```console
-docker compose exec -it sagwm-command-central su - wmuser -c "/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/CCE/configuration/wrapper.conf"
-docker compose exec -it sagwm-command-central su - wmuser -c "/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/PM/configuration/wrapper.conf"
+docker exec -it sagwm-command-central-supervisor bash
+apt-get update
+apt-get install -y net-tools
+
+# Then, you can use netstat to check the open ports:
+netstat -tuln
 
 ```
 
@@ -64,10 +63,8 @@ Already a pro? Just edit this README.md and make it your own. Want to make it ea
 - [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/wilow1/sagwm-command-central.git
-git branch -M main
-git push -uf origin main
+cd $HOME/workspaces
+git clone origin https://gitlab.com/wilow1/sagwm-command-central.git
 ```
 
 ## Integrate with your tools

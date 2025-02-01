@@ -1,21 +1,11 @@
 # Install Webmethods CC
 
-By: nkaurelien
-
-### prepare script
-
-```console
-cd C:\Training\613-72E\cc-def-10.2-fix1-w64
-
-```
 
 ### Install command
 
 ```console
 # SPM ports : 8792 (http), 8793 (https) , CCE use default ports
-.\cc-def-10.2-release-w64.bat -d C:\SAGCommandCentral\cc102 -H sagbase.wilow.local -s 8792 -S 8793 -p manage123 --accept-license
 
-# Or with custom CCE ports 
 .\cc-def-10.15-fix8-w64.bat -d C:\SAGCommandCentral\cc1015 -H sagbase.wilow.local -c 8890 -C 8891 -s 8892 -S 8893 -p manage123 --accept-license
 
 ```
@@ -27,7 +17,6 @@ To list all exemple run
 ### After Install
 You can logon to Command Central Web UI as Administrator/manage123
 
-https://sagbase.wilow.local:8091/cce/web 
 https://sagbase.wilow.local:8891/cce/web
     
 
@@ -49,7 +38,7 @@ OR Add C:\SAGCommandCentral\cc102\CommandCentral\client\bin to environment syste
 
 
 ```console
-.\cc-def-10.2-release-w64.bat  -D SPM -d C:\SoftwareAG\spm102 -H sagbase.wilow.local -s 8292 -S 8293 -p manage456 --accept-license
+.\cc-def-10.15-fix8-w64.bat -D SPM -d C:\SoftwareAG\spm1015 -H sagbase.wilow.local -s 8292 -S 8293 -p manage456 --accept-license
 
 ```
 

@@ -1,5 +1,5 @@
 # Use the official Ubuntu image as the base
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 LABEL maintainer="Nkumbe Aurelien <nkaurelien@gmail.com>"
 LABEL fonction="Webmethods Developer and Integrator"
@@ -18,7 +18,7 @@ ENV GROUP_GID=1234
 ENV PASSWORD=secret
 ENV SAG_HOME=/opt/SAGCommandCentral
 
-# set installer label using basename form path
+# Set installer label using basename from path
 LABEL installer=$CC_INSTALLER_PATH
 
 # Create a directory for the Command Central installation as ROOT
@@ -26,7 +26,10 @@ USER root
 
 # Update the package list and install necessary packages
 RUN apt-get update && \
-    apt-get install -y sudo bash supervisor
+    apt-get install -y sudo bash supervisor curl nano && \
+    rm -rf /var/lib/apt/lists/*
+    
+ENV EDITOR=nano 
 
 # Create a custom user with UID and GID
 RUN groupadd -g $GROUP_GID $GROUPNAME && \
@@ -54,7 +57,7 @@ COPY $CC_INSTALLER_PATH /home/$USERNAME/installer/installer.sh
 
 # Set permissions for the installer script
 # RUN chown $USERNAME:$GROUPNAME /home/$USERNAME/installer/installer.sh && \
-#     sudo -u $USERNAME chmod 777 -R /home/$USERNAME/installer
+#     chmod +x /home/$USERNAME/installer/installer.sh
 
 # Create profile files for the user
 RUN touch /home/$USERNAME/.profile && \
@@ -76,12 +79,12 @@ RUN if [[ "$CC_ADMIN_HOST" == *.local ]]; then \
     echo "# Custom entries for Command Central" >> /etc/hosts; \
     echo "127.0.0.1    $CC_ADMIN_HOST" >> /etc/hosts; \
     fi
-    
+
 # Remove the installer script
 RUN rm -rf /home/$USERNAME/installer
 
 # Expose the necessary ports
-EXPOSE 8090 8091 8092 8093 8094 8095
+EXPOSE 8090 8091 8092 8093
 
 # Switch back to root to configure supervisor
 USER root
@@ -96,8 +99,8 @@ command=$SAG_HOME/profiles/CCE/bin/startup.sh
 autostart=true
 autorestart=true
 user=$USERNAME
-stdout_logfile=/var/log/supervisor/%(program_name)_output.log
-stderr_logfile=/var/log/supervisor/%(program_name)_output.err.log
+stdout_logfile=/var/log/supervisor/%(program_name)s_output.log
+stderr_logfile=/var/log/supervisor/%(program_name)s_output.err.log
 EOF
 
 # Create the Platform Manager service configuration
@@ -107,8 +110,8 @@ command=$SAG_HOME/profiles/SPM/bin/startup.sh
 autostart=true
 autorestart=true
 user=$USERNAME
-stdout_logfile=/var/log/supervisor/%(program_name)_output.log
-stderr_logfile=/var/log/supervisor/%(program_name)_output.err.log
+stdout_logfile=/var/log/supervisor/%(program_name)s_output.log
+stderr_logfile=/var/log/supervisor/%(program_name)s_output.err.log
 EOF
 
 # Create a script to start supervisor and keep the container running

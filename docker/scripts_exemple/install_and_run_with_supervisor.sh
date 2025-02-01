@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set default values
-CC_INSTALLER_PATH="/path/to/installer.sh"
+CC_INSTALLER_PATH="../installer/cc-def-10.15-fix8-lnxamd64.sh"
 CC_ADMIN_PASSWORD="manage123"
 CC_ADMIN_HOST="sagbase.local"
 

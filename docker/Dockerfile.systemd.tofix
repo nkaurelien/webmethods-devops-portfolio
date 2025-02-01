@@ -1,5 +1,5 @@
 # Use the official Ubuntu image as the base
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 LABEL maintainer="Nkumbe Aurelien <nkaurelien@gmail.com>"
 LABEL fonction="Webmethods Developer and Integrator"
@@ -26,7 +26,10 @@ USER root
 
 # Update the package list and install necessary packages
 RUN apt-get update && \
-    apt-get install -y sudo bash
+    apt-get install -y sudo bash supervisor curl nano && \
+    rm -rf /var/lib/apt/lists/*
+    
+ENV EDITOR=nano 
 
 # Create a custom user with UID and GID
 RUN groupadd -g $GROUP_GID $GROUPNAME && \
@@ -129,9 +132,8 @@ EOF
 # Make the script executable
 RUN chmod +x /usr/local/bin/start-services.sh
 
-# RUN chmod +x /usr/local/bin/startup.sh
-
 # Switch back to the custom user
 USER $USERNAME
 
+# TODO TOFIX Command systemctl dont exists because Systemd is missing on official ubuntu image 
 ENTRYPOINT [ "/usr/local/bin/start-services.sh" ]

@@ -51,7 +51,7 @@ COPY $CC_INSTALLER_PATH C:\Users\wmuser\installer\installer.bat
 RUN rmdir /s /q C:\Users\wmuser\installer
 
 # Expose the Command Central ports
-EXPOSE 8090 8091 8092 8093 8094 8095
+EXPOSE 8090 8091 8092 8093
 
 # Print the user information and directory listing
 CMD echo Inside Container: && \
