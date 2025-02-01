@@ -1,7 +1,7 @@
 # Use the official Ubuntu image as the base
 FROM ubuntu:20.04
 
-LABEL maintainer="Nkumbe Aurelien <nkaurelien@gmail.Com>"
+LABEL maintainer="Nkumbe Aurelien <nkaurelien@gmail.com>"
 LABEL fonction="Webmethods Developer and Integrator"
 LABEL compagny="Wilow"
 LABEL country="France"
@@ -10,43 +10,77 @@ ARG CC_INSTALLER_PATH
 ARG CC_ADMIN_PASSWORD="manage123"
 ARG CC_ADMIN_HOST="localhost"
 
+# Set environment variables
+ENV USERNAME=wmuser
+ENV GROUPNAME=sagwm
+ENV USER_UID=1234
+ENV GROUP_GID=1234
+ENV PASSWORD=secret
+ENV SAG_HOME=/opt/SAGCommandCentral
+
 # set installer label using basename form path
-# LABEL installer=`basename $CC_INSTALLER_PATH`
 LABEL installer=$CC_INSTALLER_PATH
 
 # Create a directory for the Command Central installation as ROOT
 USER root
 
-# Create a custom user with UID 1234 and GID 1234
-RUN groupadd -g 1234 sagwm && \
-    useradd -m -u 1234 -g sagwm wmuser
+# Update the package list and install necessary packages
+RUN apt-get update && \
+    apt-get install -y sudo bash
 
-# Create a directory for the Command Central installation
-RUN mkdir -p /opt/SAGCommandCentral
-RUN mkdir -p /opt/SAGCommandCentral/installer
+# Create a custom user with UID and GID
+RUN groupadd -g $GROUP_GID $GROUPNAME && \
+    useradd -m -u $USER_UID -g $GROUPNAME $USERNAME && \
+    chsh -s /bin/bash $USERNAME && \
+    echo "$USERNAME:$PASSWORD" | chpasswd && \
+    echo "%$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME
 
-# set owner and group of the Command Central directory
-RUN chown -R 1234:1234 /opt/SAGCommandCentral
+# Create necessary directories
+RUN mkdir -p $SAG_HOME && \
+    mkdir -p $SAG_HOME/installer && \
+    chown -R $USER_UID:$GROUP_GID $SAG_HOME
 
 # Switch to the custom user
-USER wmuser
+USER $USERNAME
 
 # Set the workdir
-WORKDIR /home/wmuser
+WORKDIR /home/$USERNAME
 
-# create a directory for the installer
-RUN mkdir -p /home/wmuser/installer
+# Create a directory for the installer
+RUN mkdir -p /home/$USERNAME/installer
 
-# Copy the script to the container
-COPY $CC_INSTALLER_PATH /home/wmuser/installer/installer.sh
+# Copy the installer script to the container
+COPY $CC_INSTALLER_PATH /home/$USERNAME/installer/installer.sh
 
-# Make the script executable
-RUN /home/wmuser/installer/installer.sh -d /opt/SAGCommandCentral -H $CC_ADMIN_HOST -c 8090 -C 8091 -s 8092 -S 8093 -p $CC_ADMIN_PASSWORD --accept-license
+# Set permissions for the installer script
+# RUN chown $USERNAME:$GROUPNAME /home/$USERNAME/installer/installer.sh && \
+#     sudo -u $USERNAME chmod 777 -R /home/$USERNAME/installer
 
-# remove the installer
-RUN rm -rf /home/wmuser/installer
+# Create profile files for the user
+RUN touch /home/$USERNAME/.profile && \
+    touch /home/$USERNAME/.bashrc
 
-# Expose the Command Central ports
+# Run the installer script
+RUN /home/$USERNAME/installer/installer.sh -d $SAG_HOME -H $CC_ADMIN_HOST -c 8090 -C 8091 -s 8092 -S 8093 -p $CC_ADMIN_PASSWORD --accept-license
+
+# Append SAG environment variables to the user's profile
+RUN if [ -f "/home/$USERNAME/.sag/profile" ]; then \
+        echo "" >> /home/$USERNAME/.profile && \
+        echo "# SAG Environment" >> /home/$USERNAME/.profile && \
+        cat /home/$USERNAME/.sag/profile >> /home/$USERNAME/.profile; \
+    fi
+
+# Add entry to /etc/hosts if CC_ADMIN_HOST ends with .local
+RUN if [[ "$CC_ADMIN_HOST" == *.local ]]; then \
+    echo "" >> /etc/hosts; \
+    echo "# Custom entries for Command Central" >> /etc/hosts; \
+    echo "127.0.0.1    $CC_ADMIN_HOST" >> /etc/hosts; \
+    fi
+    
+# Remove the installer script
+RUN rm -rf /home/$USERNAME/installer
+
+# Expose the necessary ports
 EXPOSE 8090 8091 8092 8093 8094 8095
 
 # Switch back to root to create the service unit files
@@ -59,9 +93,9 @@ Description=Software AG Command Central Server
 After=network.target
 
 [Service]
-User=wmuser
-Group=sagwm
-ExecStart=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/CCE/configuration/wrapper.conf
+User=$USERNAME
+Group=$GROUPNAME
+ExecStart=$SAG_HOME/profiles/CCE/bin/startup.sh
 Restart=always
 
 [Install]
@@ -75,15 +109,14 @@ Description=Software AG Platform Manager
 After=network.target
 
 [Service]
-User=wmuser
-Group=sagwm
-ExecStart=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/SPM/configuration/wrapper.conf
+User=$USERNAME
+Group=$GROUPNAME
+ExecStart=$SAG_HOME/profiles/SPM/bin/startup.sh
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
-
 
 # Create a script to start the services and keep the container running
 RUN cat <<'EOF' > /usr/local/bin/start-services.sh
@@ -96,8 +129,9 @@ EOF
 # Make the script executable
 RUN chmod +x /usr/local/bin/start-services.sh
 
-# Switch back to the custom user
-USER wmuser
+# RUN chmod +x /usr/local/bin/startup.sh
 
-# Start the services and keep the container running
-CMD ["/usr/local/bin/start-services.sh"]
+# Switch back to the custom user
+USER $USERNAME
+
+ENTRYPOINT [ "/usr/local/bin/start-services.sh" ]

@@ -1,10 +1,24 @@
 # sagwm-command-central
 
-Build images
+## Build images
+
 ```console
 docker compose build --no-cache
-or
+# OR
+
 docker build -t sag-cc -f Dockerfile .
+
+# OR
+
+docker build --build-arg CC_INSTALLER_PATH=installer/cc-def-10.15-fix8-lnxamd64.sh \
+             --build-arg CC_ADMIN_PASSWORD=secret \
+             --build-arg CC_ADMIN_HOST=localhost \
+             --build-arg PORT_8090=8090 \
+             --build-arg PORT_8091=8091 \
+             --build-arg PORT_8092=8092 \
+             --build-arg PORT_8093=8093 \
+             --build-arg PORT_8094=8094 \
+             -t yourimage:tag .
 
 ```
 

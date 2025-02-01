@@ -1,44 +1,74 @@
 # Use the official Ubuntu image as the base
 FROM ubuntu:20.04
 
-LABEL maintainer="Nkumbe Aurelien <nkaurelien@gmail.Com>"
+LABEL maintainer="Nkumbe Aurelien <nkaurelien@gmail.com>"
 LABEL fonction="Webmethods Developer and Integrator"
 LABEL compagny="Wilow"
 LABEL country="France"
 
 ARG CC_INSTALLER_PATH
 ARG CC_ADMIN_PASSWORD="manage123"
-ARG CC_ADMIN_HOST="sagbase.local"
-ARG CC_INSTALL_DIR="/opt/SAGCommandCentral"
+ARG CC_ADMIN_HOST="localhost"
 
-# Set default environment variables
-ENV CC_ADMIN_HOST=${CC_ADMIN_HOST}
-ENV CC_ADMIN_PASSWORD=${CC_ADMIN_PASSWORD}
-ENV CC_INSTALL_DIR=${CC_INSTALL_DIR}
-ENV SHUTDOWN_TIMEOUT=30
-ENV JVM_EXIT_TIMEOUT=15
+# Set environment variables
+ENV USERNAME=wmuser
+ENV GROUPNAME=sagwm
+ENV USER_UID=1234
+ENV GROUP_GID=1234
+ENV PASSWORD=secret
+ENV SAG_HOME=/opt/SAGCommandCentral
 
 # set installer label using basename form path
-# LABEL installer=`basename $CC_INSTALLER_PATH`
 LABEL installer=$CC_INSTALLER_PATH
 
 # Create a directory for the Command Central installation as ROOT
 USER root
 
-# Create a custom user with UID 1234 and GID 1234
-RUN groupadd -g 1234 sagwm && \
-    useradd -m -u 1234 -g sagwm wmuser
+# Update the package list and install necessary packages
+RUN apt-get update && \
+    apt-get install -y sudo bash supervisor
 
-# Create directories and set permissions
-RUN mkdir -p $CC_INSTALL_DIR && \
-    chown -R 1234:1234 $CC_INSTALL_DIR && \
-    mkdir -p /home/wmuser/logs && \
-    mkdir -p $CC_INSTALL_DIR/profiles/CCE/logs && \
-    mkdir -p $CC_INSTALL_DIR/profiles/PM/logs && \
-    chown -R 1234:1234 /home/wmuser/logs $CC_INSTALL_DIR/profiles/CCE/logs $CC_INSTALL_DIR/profiles/PM/logs
+# Create a custom user with UID and GID
+RUN groupadd -g $GROUP_GID $GROUPNAME && \
+    useradd -m -u $USER_UID -g $GROUPNAME $USERNAME && \
+    chsh -s /bin/bash $USERNAME && \
+    echo "$USERNAME:$PASSWORD" | chpasswd && \
+    echo "%$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME
 
-# Install supervisord
-RUN apt-get update && apt-get install -y supervisor
+# Create necessary directories
+RUN mkdir -p $SAG_HOME && \
+    mkdir -p $SAG_HOME/installer && \
+    chown -R $USER_UID:$GROUP_GID $SAG_HOME
+
+# Switch to the custom user
+USER $USERNAME
+
+# Set the workdir
+WORKDIR /home/$USERNAME
+
+# Create a directory for the installer
+RUN mkdir -p /home/$USERNAME/installer
+
+# Copy the installer script to the container
+COPY $CC_INSTALLER_PATH /home/$USERNAME/installer/installer.sh
+
+# Set permissions for the installer script
+# RUN chown $USERNAME:$GROUPNAME /home/$USERNAME/installer/installer.sh && \
+#     sudo -u $USERNAME chmod 777 -R /home/$USERNAME/installer
+
+# Create profile files for the user
+RUN touch /home/$USERNAME/.profile && \
+    touch /home/$USERNAME/.bashrc
+
+# Run the installer script
+RUN /home/$USERNAME/installer/installer.sh -d $SAG_HOME -H $CC_ADMIN_HOST -c 8090 -C 8091 -s 8092 -S 8093 -p $CC_ADMIN_PASSWORD --accept-license
+
+# Append SAG environment variables to the user's profile
+RUN if [ -f "/home/$USERNAME/.sag/profile" ]; then \
+        echo "" >> /home/$USERNAME/.profile && \
+        echo "# SAG Environment" >> /home/$USERNAME/.profile && \
+        cat /home/$USERNAME/.sag/profile >> /home/$USERNAME/.profile; \
+    fi
 
 # Add entry to /etc/hosts if CC_ADMIN_HOST ends with .local
 RUN if [[ "$CC_ADMIN_HOST" == *.local ]]; then \
@@ -46,67 +76,52 @@ RUN if [[ "$CC_ADMIN_HOST" == *.local ]]; then \
     echo "# Custom entries for Command Central" >> /etc/hosts; \
     echo "127.0.0.1    $CC_ADMIN_HOST" >> /etc/hosts; \
     fi
+    
+# Remove the installer script
+RUN rm -rf /home/$USERNAME/installer
 
-# Switch to the custom user
-USER wmuser
-
-# Set the workdir
-WORKDIR /home/wmuser
-
-# create a directory for the installer
-RUN mkdir -p /home/wmuser/installer
-
-# Copy the script to the container
-# RUN ls -lsa /home/wmuser/installer/installer.sh
-COPY --chmod=0777 $CC_INSTALLER_PATH /home/wmuser/installer/installer.sh
-
-# Make the script executable
-# RUN chmod +rwx /home/wmuser/installer/installer.sh
-
-# Run the installer script
-RUN /home/wmuser/installer/installer.sh -d $CC_INSTALL_DIR -H $CC_ADMIN_HOST -c 8090 -C 8091 -s 8092 -S 8093 -p $CC_ADMIN_PASSWORD --accept-license
-
-# remove the installer
-RUN rm -rf /home/wmuser/installer
-
-# Expose the Command Central ports
+# Expose the necessary ports
 EXPOSE 8090 8091 8092 8093 8094 8095
 
-# Switch back to root to create the supervisord configuration
+# Switch back to root to configure supervisor
 USER root
 
-# Create the supervisord configuration file
+# Create the supervisor configuration file
 RUN mkdir -p /etc/supervisor/conf.d
-RUN cat <<EOF > /etc/supervisor/conf.d/supervisord.conf
-[supervisord]
-nodaemon=true
-logfile=/home/wmuser/logs/supervisor/supervisord.log
-logfile_maxbytes=50MB
-logfile_backups=10
-loglevel=info
 
-[inet_http_server]
-port=127.0.0.1:9001
-
+# Create the Command Central service configuration
+RUN cat <<EOF > /etc/supervisor/conf.d/commandcentral.conf
 [program:commandcentral]
-command=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 /opt/SAGCommandCentral/profiles/CCE/configuration/wrapper.conf
+command=$SAG_HOME/profiles/CCE/bin/startup.sh
 autostart=true
 autorestart=true
-user=wmuser
-stdout_logfile=/home/wmuser/logs/supervisor/commandcentral.log
-stderr_logfile=/home/wmuser/logs/supervisor/commandcentral_err.log
-
-[program:platformmanager]
-command=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 /opt/SAGCommandCentral/profiles/PM/configuration/wrapper.conf
-autostart=true
-autorestart=true
-user=wmuser
-stdout_logfile=/home/wmuser/logs/supervisor/platformmanager.log
-stderr_logfile=/home/wmuser/logs/supervisor/platformmanager_err.log
+user=$USERNAME
+stdout_logfile=/var/log/supervisor/%(program_name)_output.log
+stderr_logfile=/var/log/supervisor/%(program_name)_output.err.log
 EOF
 
-# Switch back to the custom user
-USER wmuser
+# Create the Platform Manager service configuration
+RUN cat <<EOF > /etc/supervisor/conf.d/platformmanager.conf
+[program:platformmanager]
+command=$SAG_HOME/profiles/SPM/bin/startup.sh
+autostart=true
+autorestart=true
+user=$USERNAME
+stdout_logfile=/var/log/supervisor/%(program_name)_output.log
+stderr_logfile=/var/log/supervisor/%(program_name)_output.err.log
+EOF
 
-# Start supervisord in the foreground with the full path
-CMD ["/usr/bin/supervisord", "-n"]
+# Create a script to start supervisor and keep the container running
+RUN cat <<'EOF' > /usr/local/bin/start-supervisor.sh
+#!/bin/bash
+/usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+tail -f /dev/null
+EOF
+
+# Make the script executable
+RUN chmod +x /usr/local/bin/start-supervisor.sh
+
+# Switch back to the custom user
+# USER $USERNAME
+
+ENTRYPOINT [ "/usr/local/bin/start-supervisor.sh" ]
