@@ -27,7 +27,7 @@ EDITOR=nano sudo visudo
 
 ```console
 sudo -u wmuser -i bash
-chmod +x cc-def-10.7-fix9-lnxamd64.sh 
+chmod +x cc-def-10.15-fix8-lnxamd64 
 
 ```
 ### set super user password
@@ -35,17 +35,17 @@ export uperCCAdm1n=oracle
 
 ### Install command
 
-./cc-def-10.7-fix9-lnxamd64.sh -D CCE -d /opt/sagcc/cc107 -p manage --accept-license 
-./cc-def-10.7-fix9-lnxamd64.sh -D CCE -d $HOME/sagcc/cc107 -p manage --accept-license 
+./cc-def-10.15-fix8-lnxamd64 -d /opt/sagcc/cc107 -p manage --accept-license 
+./cc-def-10.15-fix8-lnxamd64 -D CCE -d $HOME/sagcc/cc107 -p manage --accept-license 
 
 
 If you have a VM with a Hostname (edit etc/hosts if needed)
 
-./cc-def-10.7-fix9-lnxamd64.sh -D CCE -d /opt/sagcc/cc107 -H cchost.com -c 9090 -C 9091 -s 9092 -S 9093 -p $uperCCAdm1n --accept-license
+./cc-def-10.15-fix8-lnxamd64 -D CCE -d /opt/sagcc/cc107 -H cchost.com -c 9090 -C 9091 -s 9092 -S 9093 -p $uperCCAdm1n --accept-license
 
 To list all exemple run
 
-./cc-def-10.7-fix9-lnxamd64.sh
+./cc-def-10.15-fix8-lnxamd64 -h
 
 # Help
 

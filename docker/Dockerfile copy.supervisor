@@ -9,14 +9,10 @@ LABEL country="France"
 ARG CC_INSTALLER_PATH
 ARG CC_ADMIN_PASSWORD="manage123"
 ARG CC_ADMIN_HOST="sagbase.local"
-ARG CC_INSTALL_DIR="/opt/SAGCommandCentral"
 
 # Set default environment variables
 ENV CC_ADMIN_HOST=${CC_ADMIN_HOST}
 ENV CC_ADMIN_PASSWORD=${CC_ADMIN_PASSWORD}
-ENV CC_INSTALL_DIR=${CC_INSTALL_DIR}
-ENV SHUTDOWN_TIMEOUT=30
-ENV JVM_EXIT_TIMEOUT=15
 
 # set installer label using basename form path
 # LABEL installer=`basename $CC_INSTALLER_PATH`
@@ -29,13 +25,12 @@ USER root
 RUN groupadd -g 1234 sagwm && \
     useradd -m -u 1234 -g sagwm wmuser
 
-# Create directories and set permissions
-RUN mkdir -p $CC_INSTALL_DIR && \
-    chown -R 1234:1234 $CC_INSTALL_DIR && \
-    mkdir -p /home/wmuser/logs && \
-    mkdir -p $CC_INSTALL_DIR/profiles/CCE/logs && \
-    mkdir -p $CC_INSTALL_DIR/profiles/PM/logs && \
-    chown -R 1234:1234 /home/wmuser/logs $CC_INSTALL_DIR/profiles/CCE/logs $CC_INSTALL_DIR/profiles/PM/logs
+# Create a directory for the Command Central installation
+RUN mkdir -p /opt/SAGCommandCentral
+RUN mkdir -p /opt/SAGCommandCentral/installer
+
+# set owner and group of the Command Central directory
+RUN chown -R 1234:1234 /opt/SAGCommandCentral
 
 # Install supervisord
 RUN apt-get update && apt-get install -y supervisor
@@ -57,17 +52,16 @@ WORKDIR /home/wmuser
 RUN mkdir -p /home/wmuser/installer
 
 # Copy the script to the container
-# RUN ls -lsa /home/wmuser/installer/installer.sh
-COPY --chmod=0777 $CC_INSTALLER_PATH /home/wmuser/installer/installer.sh
+COPY $CC_INSTALLER_PATH /home/wmuser/installer/installer.sh
 
 # Make the script executable
-# RUN chmod +rwx /home/wmuser/installer/installer.sh
-
-# Run the installer script
-RUN /home/wmuser/installer/installer.sh -d $CC_INSTALL_DIR -H $CC_ADMIN_HOST -c 8090 -C 8091 -s 8092 -S 8093 -p $CC_ADMIN_PASSWORD --accept-license
+RUN /home/wmuser/installer/installer.sh -d /opt/SAGCommandCentral -H $CC_ADMIN_HOST -c 8090 -C 8091 -s 8092 -S 8093 -p $CC_ADMIN_PASSWORD --accept-license
 
 # remove the installer
 RUN rm -rf /home/wmuser/installer
+
+# Create a directory for supervisord logs
+RUN mkdir -p /home/wmuser/logs/supervisor
 
 # Expose the Command Central ports
 EXPOSE 8090 8091 8092 8093 8094 8095
@@ -89,7 +83,7 @@ loglevel=info
 port=127.0.0.1:9001
 
 [program:commandcentral]
-command=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 /opt/SAGCommandCentral/profiles/CCE/configuration/wrapper.conf
+command=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/CCE/configuration/wrapper.conf
 autostart=true
 autorestart=true
 user=wmuser
@@ -97,7 +91,7 @@ stdout_logfile=/home/wmuser/logs/supervisor/commandcentral.log
 stderr_logfile=/home/wmuser/logs/supervisor/commandcentral_err.log
 
 [program:platformmanager]
-command=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 /opt/SAGCommandCentral/profiles/PM/configuration/wrapper.conf
+command=/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/PM/configuration/wrapper.conf
 autostart=true
 autorestart=true
 user=wmuser

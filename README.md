@@ -12,7 +12,30 @@ Containers run or stop (cleaning local images)
 
 ```console
 docker compose up
-docker compose down --rmi local
+docker compose down --remove-orphans --rmi local
+```
+
+Check the running and supervisord status:
+```console
+docker compose exec -it sagwm-command-central ps aux
+docker compose exec -it sagwm-command-central supervisorctl status
+
+```
+
+Check logs
+```console
+docker compose exec -it sagwm-command-central cat /home/wmuser/logs/supervisor/commandcentral.log
+docker compose exec -it sagwm-command-central cat /home/wmuser/logs/supervisor/commandcentral_err.log
+docker compose exec -it sagwm-command-central cat /home/wmuser/logs/supervisor/platformmanager.log
+docker compose exec -it sagwm-command-central cat /home/wmuser/logs/supervisor/platformmanager_err.log
+
+```
+
+Run Commands Manually inside container
+```console
+docker compose exec -it sagwm-command-central su - wmuser -c "/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/CCE/configuration/wrapper.conf"
+docker compose exec -it sagwm-command-central su - wmuser -c "/opt/SAGCommandCentral/common/bin/wrapper-3.5.53 -s /opt/SAGCommandCentral/profiles/PM/configuration/wrapper.conf"
+
 ```
 
 ## Getting started
