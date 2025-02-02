@@ -1,5 +1,5 @@
-# Use the official Ubuntu image as the base
-FROM ubuntu:22.04
+FROM rockylinux:8
+# FROM almalinux:8
 
 LABEL maintainer="Nkumbe Aurelien <nkaurelien@gmail.com>"
 LABEL fonction="Webmethods Developer and Integrator"
@@ -25,18 +25,20 @@ LABEL installer=$CC_INSTALLER_PATH
 USER root
 
 # Update the package list and install necessary packages
-RUN apt-get update && \
-    apt-get install -y sudo bash supervisor curl nano && \
-    rm -rf /var/lib/apt/lists/*
-    
-ENV EDITOR=nano 
+RUN dnf -y update && \
+    dnf -y install sudo bash curl nano epel-release && \
+    dnf -y install supervisor && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+
+ENV EDITOR=nano
 
 # Create a custom user with UID and GID
 RUN groupadd -g $GROUP_GID $GROUPNAME && \
     useradd -m -u $USER_UID -g $GROUPNAME $USERNAME && \
-    chsh -s /bin/bash $USERNAME && \
     echo "$USERNAME:$PASSWORD" | chpasswd && \
-    echo "%$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME
+    echo "%$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME && \
+    sed -i "s|$USERNAME:.*:|$USERNAME:x:$USER_UID:$GROUP_GID:/home/$USERNAME:/bin/bash|" /etc/passwd
 
 # Create necessary directories
 RUN mkdir -p $SAG_HOME && \
@@ -85,7 +87,7 @@ EXPOSE 8090 8091 8092 8093
 # Switch back to root to configure supervisor
 USER root
 
-# Create the supervisor configuration file
+# Create the supervisor configuration directory
 RUN mkdir -p /etc/supervisor/conf.d
 
 # Create the Command Central service configuration
@@ -113,7 +115,7 @@ EOF
 # Create a script to start supervisor and keep the container running
 RUN cat <<'EOF' > /usr/local/bin/start-supervisor.sh
 #!/bin/bash
-/usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+/usr/bin/supervisord -c /etc/supervisord.conf
 tail -f /dev/null
 EOF
 

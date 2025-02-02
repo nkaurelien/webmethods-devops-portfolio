@@ -1,5 +1,5 @@
-# Use the official Ubuntu image as the base
-FROM ubuntu:22.04
+# Use the official Oracle Linux 8 image as the base
+FROM oraclelinux:8
 
 LABEL maintainer="Nkumbe Aurelien <nkaurelien@gmail.com>"
 LABEL fonction="Webmethods Developer and Integrator"
@@ -25,16 +25,17 @@ LABEL installer=$CC_INSTALLER_PATH
 USER root
 
 # Update the package list and install necessary packages
-RUN apt-get update && \
-    apt-get install -y sudo bash supervisor curl nano && \
-    rm -rf /var/lib/apt/lists/*
-    
-ENV EDITOR=nano 
+RUN yum -y update && \
+    yum -y install sudo bash curl nano epel-release && \
+    yum -y install supervisor && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+
+ENV EDITOR=nano
 
 # Create a custom user with UID and GID
 RUN groupadd -g $GROUP_GID $GROUPNAME && \
-    useradd -m -u $USER_UID -g $GROUPNAME $USERNAME && \
-    chsh -s /bin/bash $USERNAME && \
+    useradd -m -u $USER_UID -s /bin/bash -g $GROUPNAME $USERNAME && \
     echo "$USERNAME:$PASSWORD" | chpasswd && \
     echo "%$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME
 
@@ -51,6 +52,7 @@ WORKDIR /home/$USERNAME
 
 # Create a directory for the installer
 RUN mkdir -p /home/$USERNAME/installer
+    
 
 # Copy the installer script to the container
 COPY $CC_INSTALLER_PATH /home/$USERNAME/installer/installer.sh
@@ -86,10 +88,10 @@ EXPOSE 8090 8091 8092 8093
 USER root
 
 # Create the supervisor configuration file
-RUN mkdir -p /etc/supervisor/conf.d
+RUN mkdir -p /etc/supervisord.d
 
 # Create the Command Central service configuration
-RUN cat <<EOF > /etc/supervisor/conf.d/commandcentral.conf
+RUN cat <<EOF > /etc/supervisord.d/commandcentral.ini
 [program:commandcentral]
 command=$SAG_HOME/profiles/CCE/bin/startup.sh
 autostart=true
@@ -100,7 +102,7 @@ stderr_logfile=/var/log/supervisor/%(program_name)s_output.err.log
 EOF
 
 # Create the Platform Manager service configuration
-RUN cat <<EOF > /etc/supervisor/conf.d/platformmanager.conf
+RUN cat <<EOF > /etc/supervisord.d/platformmanager.ini
 [program:platformmanager]
 command=$SAG_HOME/profiles/SPM/bin/startup.sh
 autostart=true
@@ -110,15 +112,28 @@ stdout_logfile=/var/log/supervisor/%(program_name)s_output.log
 stderr_logfile=/var/log/supervisor/%(program_name)s_output.err.log
 EOF
 
+# Ensure the default supervisord.conf includes the conf.d directory
+# RUN sed -i '/^\[include\]/a files = /etc/supervisord.d/*.ini' /etc/supervisord.conf
+
 # Create a script to start supervisor and keep the container running
 RUN cat <<'EOF' > /usr/local/bin/start-supervisor.sh
 #!/bin/bash
-/usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+/usr/bin/supervisord -c /etc/supervisord.conf
 tail -f /dev/null
 EOF
 
-# Make the script executable
+# Create a script to start commandcentral without supervisor and keep the container running
+RUN cat <<'EOF' > /usr/local/bin/start-commandcentral.sh
+#!/bin/bash
+mkdir -p /home/$USERNAME/logs && chown -R $USER_UID:$GROUP_GID /home/$USERNAME/logs
+nohup $SAG_HOME/profiles/CCE/bin/startup.sh > /home/wmuser/logs/commandcentral.log 2>&1 &
+nohup $SAG_HOME/profiles/SPM/bin/startup.sh > /home/wmuser/logs/platformmanager.log 2>&1 &
+tail -f /dev/null
+EOF
+
+# Make the scripts executable
 RUN chmod +x /usr/local/bin/start-supervisor.sh
+RUN chmod +x /usr/local/bin/start-commandcentral.sh
 
 # Switch back to the custom user
 # USER $USERNAME
