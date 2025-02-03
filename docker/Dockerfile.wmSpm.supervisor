@@ -7,18 +7,19 @@ LABEL compagny="Wilow"
 LABEL country="France"
 
 ARG CC_INSTALLER_PATH
-ARG SAG_ZIP_LICENCE_PATH
 ARG CC_ADMIN_PASSWORD="manage123"
 ARG CC_ADMIN_HOST="localhost"
+ARG CC_SPM_NAME="SPM"
+ARG CC_SPM_HTTP_PORT="8292"
+ARG CC_SPM_HTTPS_PORT="8293"
 
 # Set environment variables
 ENV USERNAME=wmuser
-ENV GROUPNAME=sagwm
+ENV GROUPNAME=webmethods
 ENV USER_UID=1234
 ENV GROUP_GID=1234
 ENV PASSWORD=${CC_ADMIN_PASSWORD}
-ENV SAG_HOME=/opt/SAGCommandCentral
-ENV CC_CLI_HOME=${SAG_HOME}/CommandCentral/client
+ENV SAG_HOME=/opt/IBM/webMethods
 
 # Set installer label using basename from path
 LABEL installer=$CC_INSTALLER_PATH
@@ -57,24 +58,18 @@ RUN mkdir -p /home/$USERNAME/installer
 # Copy the installer script to the container
 COPY $CC_INSTALLER_PATH /home/$USERNAME/installer/installer.sh
 
-# Copy license files to the container
-COPY $CC_ZIP_LICENCE_PATH /home/$USERNAME/installer/license.zip
-
 # Create profile files for the user
 RUN touch /home/$USERNAME/.profile && \
     touch /home/$USERNAME/.bashrc
 
 # Run the installer script
-RUN /home/$USERNAME/installer/installer.sh -d $SAG_HOME -H $CC_ADMIN_HOST -c 8090 -C 8091 -s 8092 -S 8093 -p $CC_ADMIN_PASSWORD --accept-license
-
-# Add the license file to the Command Central instance
-RUN sagcc add license-tools keys -i /home/$USERNAME/installer/license.zip
+RUN /home/$USERNAME/installer/installer.sh -D ${CC_SPM_NAME} ${SAG_HOME} -H $CC_ADMIN_HOST  -s ${CC_SPM_HTTP_PORT} -S ${CC_SPM_HTTPS_PORT} -p $CC_ADMIN_PASSWORD --accept-license
 
 
 # Append SAG environment variables to the user's profile
 RUN if [ -f "/home/$USERNAME/.sag/profile" ]; then \
         echo "" >> /home/$USERNAME/.profile && \
-        echo "# SAG Environment" >> /home/$USERNAME/.profile && \
+        echo "# Webmethods Environment" >> /home/$USERNAME/.profile && \
         cat /home/$USERNAME/.sag/profile >> /home/$USERNAME/.profile; \
         source /home/$USERNAME/.profile; \
     fi
@@ -86,16 +81,11 @@ RUN if [[ "$CC_ADMIN_HOST" == *.local ]]; then \
     echo "127.0.0.1    $CC_ADMIN_HOST" >> /etc/hosts; \
     fi
 
-# Import the license file
-# RUN if [ -f "/home/$USERNAME/installer/licenses/licences.zip" ]; then \
-#         $CC_CLI_HOME/bin/sagcc add license-tools keys -i /home/$USERNAME/installer/licences.zip \
-#     fi
-
 # Remove the installer script
 RUN rm -rf /home/$USERNAME/installer
 
 # Expose the necessary ports
-EXPOSE 8090 8091 8092 8093
+EXPOSE ${CC_SPM_HTTP_PORT} ${CC_SPM_HTTPS_PORT}
 
 # Switch back to root to configure supervisor
 USER root
@@ -103,16 +93,6 @@ USER root
 # Create the supervisor configuration file
 RUN mkdir -p /etc/supervisor/conf.d
 
-# Create the Command Central service configuration
-RUN cat <<EOF > /etc/supervisor/conf.d/commandcentral.conf
-[program:commandcentral]
-command=$SAG_HOME/profiles/CCE/bin/startup.sh
-autostart=true
-autorestart=true
-user=$USERNAME
-stdout_logfile=/var/log/supervisor/%(program_name)s_output.log
-stderr_logfile=/var/log/supervisor/%(program_name)s_output.err.log
-EOF
 
 # Create the Platform Manager service configuration
 RUN cat <<EOF > /etc/supervisor/conf.d/platformmanager.conf

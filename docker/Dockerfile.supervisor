@@ -7,6 +7,7 @@ LABEL compagny="Wilow"
 LABEL country="France"
 
 ARG CC_INSTALLER_PATH
+ARG CC_DB_URL
 ARG SAG_ZIP_LICENCE_PATH
 ARG CC_ADMIN_PASSWORD="manage123"
 ARG CC_ADMIN_HOST="localhost"
@@ -19,6 +20,7 @@ ENV GROUP_GID=1234
 ENV PASSWORD=${CC_ADMIN_PASSWORD}
 ENV SAG_HOME=/opt/SAGCommandCentral
 ENV CC_CLI_HOME=${SAG_HOME}/CommandCentral/client
+ENV DB_URL=${CC_DB_URL}
 
 # Set installer label using basename from path
 LABEL installer=$CC_INSTALLER_PATH
@@ -130,6 +132,15 @@ RUN cat <<'EOF' > /usr/local/bin/start-supervisor.sh
 #!/bin/bash
 /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
 tail -f /dev/null
+EOF
+
+# Create a script to start commandcentral without supervisor if needed and keep the container running
+RUN cat <<'EOF' > /usr/local/bin/start-commandcentral.sh
+#!/bin/bash
+mkdir -p /home/$USERNAME/logs && chown -R $USER_UID:$GROUP_GID /home/$USERNAME/logs
+nohup $SAG_HOME/profiles/CCE/bin/startup.sh > /home/$USERNAME/logs/commandcentral.log 2>&1 &
+nohup $SAG_HOME/profiles/SPM/bin/startup.sh > /home/$USERNAME/logs/platformmanager.log 2>&1 &
+# tail -f /dev/null
 EOF
 
 # Make the script executable
