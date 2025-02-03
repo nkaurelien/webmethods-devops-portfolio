@@ -7,6 +7,7 @@ LABEL compagny="Wilow"
 LABEL country="France"
 
 ARG CC_INSTALLER_PATH
+ARG CC_ZIP______PATH
 ARG CC_ADMIN_PASSWORD="manage123"
 ARG CC_ADMIN_HOST="localhost"
 

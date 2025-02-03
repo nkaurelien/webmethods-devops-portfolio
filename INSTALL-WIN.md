@@ -1,12 +1,12 @@
 # Install Webmethods CC
 
 
-### Install command
+### Install command (Run as Administrator)
 
 ```console
 # SPM ports : 8792 (http), 8793 (https) , CCE use default ports
 
-.\cc-def-10.15-fix8-w64.bat -d C:\SAGCommandCentral\cc1015 -H sagbase.wilow.local -c 8890 -C 8891 -s 8892 -S 8893 -p manage123 --accept-license
+.\cc-def-10.15-fix8-w64.bat -d C:\SAGCommandCentral\cc1015 -H sagbase.wilow.local -c 8190 -C 8191 -s 8192 -S 8193 -p manage123 --accept-license
 
 ```
 
@@ -17,7 +17,7 @@ To list all exemple run
 ### After Install
 You can logon to Command Central Web UI as Administrator/manage123
 
-https://sagbase.wilow.local:8891/cce/web
+https://sagbase.wilow.local:8191/cce/web
     
 
 NOTE: for external clients you may need to use external hostname or IP instead of sagbase.wilow.local
@@ -48,7 +48,12 @@ Installation of SPM completed
 
 You can register this SPM node from your CCE or CLI installation:
 
+
 ```console
+# Add licence
+
+sagcc add license-tools keys -i /installer/licences\ .zip
+
 sagcc add landscape nodes url=http://sagbase.wilow.local:8292 alias=wMDev1
 sagcc add security credentials nodeAlias=wMDev1 runtimeComponentId=SPM-CONNECTION username=Administrator password=manage456
 

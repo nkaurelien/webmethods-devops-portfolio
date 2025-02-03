@@ -1,12 +1,12 @@
 services:
   sagwm-command-central-supervisor:
-    container_name: "sagwm-command-central-supervisor"
+    container_name: "sagwm-command-central-supervisor-ubuntu"
     build:
       context: .
       dockerfile: Dockerfile.supervisor
       args:
         - CC_INSTALLER_PATH=installer/cc-def-10.15-fix8-lnxamd64.sh
-        - CC_ZIP_LICENCE_PATH=installer/licence.zip
+        - SAG_ZIP_LICENCE_PATH=installer/licences.zip
         - DB_URL=jdbc:wm:sqlserver://sagwm-sql-server:1433;databaseName=master -u sa -p manage123 -au sa -ap manage123 -n LOGGER1015 
         # - CC_ADMIN_HOST=sagbase.wilow.local
     ports:
@@ -14,26 +14,26 @@ services:
       - "8091:8091"
       - "8090:8090"
 
-  sagwm-command-central-supervisor-ol8:
-    container_name: "sagwm-command-central-supervisor-ol8"
-    build:
-      context: .
-      dockerfile: Dockerfile.supervisor.oraclelinux
-      args:
-        - CC_INSTALLER_PATH=installer/cc-def-10.15-fix8-lnxamd64.sh
-        # - CC_ADMIN_HOST=sagbase.wilow.local
+  # sagwm-command-central-supervisor-ol8:
+  #   container_name: "sagwm-command-central-supervisor-ol8"
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.supervisor.oraclelinux
+  #     args:
+  #       - CC_INSTALLER_PATH=installer/cc-def-10.15-fix8-lnxamd64.sh
+  #       # - CC_ADMIN_HOST=sagbase.wilow.local
 
-    ports:
-      # 8090 8091 8092 8093
-      - "9091:8091"
-      - "9090:8090"
+  #   ports:
+  #     # 8090 8091 8092 8093
+  #     - "9091:8091"
+  #     - "9090:8090"
 
   sagwm-sql-server:
     image: mcr.microsoft.com/mssql/server:2017-latest
     container_name: sagwm-sql-server-2017
     restart: always
     ports:
-      - "1433:1433"
+      - "11433:1433"
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "manage123"

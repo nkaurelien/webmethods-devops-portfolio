@@ -126,8 +126,8 @@ EOF
 RUN cat <<'EOF' > /usr/local/bin/start-commandcentral.sh
 #!/bin/bash
 mkdir -p /home/$USERNAME/logs && chown -R $USER_UID:$GROUP_GID /home/$USERNAME/logs
-nohup $SAG_HOME/profiles/CCE/bin/startup.sh > /home/wmuser/logs/commandcentral.log 2>&1 &
-nohup $SAG_HOME/profiles/SPM/bin/startup.sh > /home/wmuser/logs/platformmanager.log 2>&1 &
+nohup $SAG_HOME/profiles/CCE/bin/startup.sh > /home/$USERNAME/logs/commandcentral.log 2>&1 &
+nohup $SAG_HOME/profiles/SPM/bin/startup.sh > /home/$USERNAME/logs/platformmanager.log 2>&1 &
 tail -f /dev/null
 EOF
 

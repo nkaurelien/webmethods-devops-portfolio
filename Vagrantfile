@@ -41,6 +41,7 @@ Vagrant.configure("2") do |config|
 
   # Sync the installer directory to the VM
   config.vm.synced_folder "./docker/installer", "/installer", disabled: false
+  # config.vm.synced_folder ".", "/vagrant", disabled: false
 
   # Provision the VM with a shell script
   config.vm.provision "shell", inline: <<-SHELL
@@ -51,7 +52,7 @@ Vagrant.configure("2") do |config|
     GROUPNAME="sagwm"
     USER_UID=1234
     GROUP_GID=1234
-    PASSWORD="secret"
+    PASSWORD="manage123"
     INSTALLER_PATH="/installer/cc-def-10.15-fix8-lnxamd64.sh"
     SAG_HOME="/opt/SAGCommandCentral"
     CC_ADMIN_PASSWORD="manage123"
@@ -103,5 +104,18 @@ Vagrant.configure("2") do |config|
 
     # Optionally remove the installer script
     # sudo rm -rf $INSTALLER_PATH
+
+    # Create a script to start commandcentral
+    sudo -u $USERNAME cat <<EOF > /home/$USERNAME/start-commandcentral.sh
+#!/bin/bash
+mkdir -p /home/$USERNAME/logs && chown -R $USER_UID:$GROUP_GID /home/$USERNAME/logs
+nohup $SAG_HOME/profiles/CCE/bin/startup.sh > /home/$USERNAME/logs/commandcentral.log 2>&1 &
+nohup $SAG_HOME/profiles/SPM/bin/startup.sh > /home/$USERNAME/logs/platformmanager.log 2>&1 &
+EOF
+
+    chmod +x /home/$USERNAME/start-commandcentral.sh
+    exec /home/$USERNAME/start-commandcentral.sh
+    
   SHELL
+
 end
