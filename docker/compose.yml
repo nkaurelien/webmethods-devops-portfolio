@@ -6,6 +6,8 @@ services:
       dockerfile: Dockerfile.supervisor
       args:
         - CC_INSTALLER_PATH=installer/cc-def-10.15-fix8-lnxamd64.sh
+        - CC_ZIP_LICENCE_PATH=installer/licence.zip
+        - DB_URL=jdbc:wm:sqlserver://sagwm-sql-server:1433;databaseName=master -u sa -p manage123 -au sa -ap manage123 -n LOGGER1015 
         # - CC_ADMIN_HOST=sagbase.wilow.local
     ports:
       # 8090 8091 8092 8093
@@ -20,7 +22,24 @@ services:
       args:
         - CC_INSTALLER_PATH=installer/cc-def-10.15-fix8-lnxamd64.sh
         # - CC_ADMIN_HOST=sagbase.wilow.local
+
     ports:
       # 8090 8091 8092 8093
       - "9091:8091"
       - "9090:8090"
+
+  sagwm-sql-server:
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    container_name: sagwm-sql-server-2017
+    restart: always
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "manage123"
+      MSSQL_PID: "Express"
+    volumes:
+      - sagwm-sql-server:/var/opt/mssql
+
+volumes:
+  sagwm-sql-server:

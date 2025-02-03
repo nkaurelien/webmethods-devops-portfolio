@@ -55,6 +55,9 @@ RUN mkdir -p /home/$USERNAME/installer
 # Copy the installer script to the container
 COPY $CC_INSTALLER_PATH /home/$USERNAME/installer/installer.sh
 
+# Copy license files to the container
+COPY $CC_ZIP_LICENCE_PATH /home/$USERNAME/installer/licenses/license.zip
+
 # Create profile files for the user
 RUN touch /home/$USERNAME/.profile && \
     touch /home/$USERNAME/.bashrc
@@ -62,6 +65,13 @@ RUN touch /home/$USERNAME/.profile && \
 # Run the installer script
 RUN /home/$USERNAME/installer/installer.sh -d $SAG_HOME -H $CC_ADMIN_HOST -c 8090 -C 8091 -s 8092 -S 8093 -p $CC_ADMIN_PASSWORD --accept-license
 
+# Add the license file to the Command Central instance
+RUN sagcc add license-tools keys -i /home/$USERNAME/installer/licenses/license.zip
+
+# Import the license file
+RUN if [ -f "/home/$USERNAME/installer/licenses/license.zip" ]; then \
+        sagcc add license-tools keys -i /home/$USERNAME/installer/licenses/license.zip \
+    fi
 # Append SAG environment variables to the user's profile
 RUN if [ -f "/home/$USERNAME/.sag/profile" ]; then \
         echo "" >> /home/$USERNAME/.profile && \
