@@ -45,7 +45,7 @@ services:
     container_name: sagwm-sql-server-2017
     restart: always
     ports:
-      - "11433:1433"
+      - "1433:1433"
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "manage123"

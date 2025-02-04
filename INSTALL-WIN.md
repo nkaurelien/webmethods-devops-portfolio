@@ -1,18 +1,16 @@
 # Install Webmethods CC
 
 
-### Install command (Run as Administrator)
+### Install command central (Run as Administrator)
 
 ```console
+cd C:\SAGCommandCentral\resources
+
 # SPM ports : 8792 (http), 8793 (https) , CCE use default ports
 
 .\cc-def-10.15-fix8-w64.bat -d C:\SAGCommandCentral\cc1015 -H sagbase.wilow.local -c 8190 -C 8191 -s 8192 -S 8193 -p manage123 --accept-license
 
 ```
-
-To list all exemple run
-
-.\cc-def-10.2-release-w64.bat -h
 
 ### After Install
 You can logon to Command Central Web UI as Administrator/manage123
@@ -50,25 +48,121 @@ You can register this SPM node from your CCE or CLI installation:
 
 
 ```console
+
+cd C:\SAGCommandCentral\cc1015\CommandCentral\client\bin
+
 # Add licence
 
-sagcc add license-tools keys -i /installer/licences\ .zip
+.\sagcc add license-tools keys -i C:\SAGCommandCentral\cc1015\resources/licences.zip
 
-sagcc add landscape nodes url=http://sagbase.wilow.local:8292 alias=wMDev1
-sagcc add security credentials nodeAlias=wMDev1 runtimeComponentId=SPM-CONNECTION username=Administrator password=manage456
+# add repository product
 
-sagcc add landscape environments alias=wMDevelpement description="my wM Dev installations"
-sagcc add landscape environments wMDevelpement nodes nodeAlias=wMDev1
+.\sagcc add repository products image name=wM10.15-imageRepo-products -i C:\SAGCommandCentral\cc1015\resources\wM10_15.zip description="Webmethods Local images Repo for products"
+
+# add repository fixes
+
+.\sagcc add repository fixes image name=wM10.15-imageRepo-fixes -i C:\SAGCommandCentral\cc1015\resources/wM10_15_fixes.zip description="Webmethods Local images Repo for fixes"
+
+
+# add repo mirror products
+
+.\sagcc add repository products mirror name=wM10.15-imageRepo-products-mirror sourceRepos=wM10.15-imageRepo-products
+
+# add repo mirror fixes
+
+.\sagcc add repository fixes mirror name=wM10.15-imageRepo-fixes-mirror sourceRepos=wM10.15-imageRepo-fixes productRepos=wM10.15-imageRepo-products
+
+
+
 
 ```
 
-# Help
 
-https://docs.webmethods.io/on-premises/webmethods-command-central/en/10.3.0/webhelp/index.html#page/cce-webhelp/cce.install.cc.html
+### Install new node and environement with SPM
 
-### CC Docs
-https://docs.webmethods.io/search?q=commande%20central
 
-### CC Docs
-https://docs.webmethods.io/search?q=commande%20central
-https://docs.webmethods.io/on-premises/webmethods-command-central/en/10.7.0/admin-sag-prods-with-cc/index.html#page/cc-products-onlinehelp%2Fre-sample_templates.html%23
+```console
+cd C:\SAGCommandCentral\resources
+
+.\cc-def-10.15-fix8-w64.bat -D SPM -d C:\IBM\webMethods\wM1015 -H sagbase.wilow.local -s 8092 -S 8093 -p manage123 --accept-license
+
+
+cd C:\SAGCommandCentral\cc1015\CommandCentral\client\bin
+
+# Create node : IBM Platform Manager (SPM) installation 
+
+.\sagcc create landscape nodes name="Integration Server 1" alias=wmIs1 url=http://sagbase.wilow.local:8092
+
+# Declaration of IPMs (SPMs) in CCE 
+
+.\sagcc add security credentials nodeAlias=wmIs1 runtimeComponentId=SPM-CONNECTION username=Administrator password=manage123
+
+# create environement
+
+.\sagcc add landscape environments alias=PROD_ESB_10.15
+
+# Attach a node (An Installation) to an environment 
+
+.\sagcc add landscape environments PROD_ESB_10.15 nodes nodeAlias=wmIs1
+
+```
+
+# Provisionning (install product on node)
+
+
+```console
+
+
+# Install dbConfigurator 
+
+.\sagcc exec provisioning products local wM10.15-imageRepo-products-mirror install artifacts=DatabaseComponentConfigurator,PIEcdc,MATcdc,WOKcdc,WMNcdc,MWScdc,WPEcdc,TNScdc 
+
+# Updating dbConfigurator 
+
+.\sagcc exec provisioning fixes local wM10.15-imageRepo-fixes-mirror install products=DatabaseComponentConfigurator,PIEcdc,MATcdc,WOKcdc,WMNcdc,MWScdc,WPEcdc,TNScdc
+
+
+
+```
+
+# Configure Database (SqlServer)
+
+jdbc:wm:sqlserver://sagwm-sql-server:1433;databaseName=master -u sa -p manage123 -au sa -ap manage123 -n LOGGER1015
+
+```console
+
+cd C:\SAGCommandCentral\cc1015\common\db\bin
+cd C:\IBM\webMethods\wM1015\common\db\bin
+
+
+# Creates the database user and storage
+
+## atebase Live
+.\dbConfigurator.bat -a create -d sqlserver -c storage -v latest -l "jdbc:wm:sqlserver://localhost:1433;databaseName=master" -u SQLUser1015 -p manage123 -au sa -ap manage123 -n LOGGER1015 
+
+## datebase Archive 
+.\dbConfigurator.bat -a create -d sqlserver -c storage -v latest -l "jdbc:wm:sqlserver://localhost:1433;databaseName=master" -u SQLUser1015 -p manage123 -au sa -ap manage123 -n ARCHIVE1015 
+
+
+# Creating Database Components 
+
+## MWS 
+
+.\dbConfigurator.bat -a create -pr MWS -v latest -d sqlserver -l "jdbc:wm:sqlserver://localhost:1433;databaseName=LOGGER1015;MaxPooledStatements=35" -u SQLUser1015 -p manage123 
+
+## TN 
+
+.\dbConfigurator.bat -a create -pr TN -v latest -d sqlserver -l "jdbc:wm:sqlserver://localhost:1433;databaseName=LOGGER1015;MaxPooledStatements=35" -u SQLUser1015 -p manage123 
+
+## IS 
+
+.\dbConfigurator.bat -a create -pr IS -v latest -d sqlserver -l "jdbc:wm:sqlserver://localhost:1433;databaseName=LOGGER1015;MaxPooledStatements=35" -u SQLUser1015 -p manage123 
+
+# BPM 
+
+.\dbConfigurator.bat -a create -pr PRE -v latest -d sqlserver -l "jdbc:wm:sqlserver://localhost:1433;databaseName=LOGGER1015;MaxPooledStatements=35" -u SQLUser1015 -p manage123 
+
+## Archive 
+
+.\dbConfigurator.bat -a create -c Archive -v latest -d sqlserver -l "jdbc:wm:sqlserver://localhost:1433;databaseName=ARCHIVE1015;MaxPooledStatements=35" -u SQLUser1015 -p manage123 
+```
