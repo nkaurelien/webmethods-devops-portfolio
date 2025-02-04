@@ -7,8 +7,6 @@ LABEL compagny="Wilow"
 LABEL country="France"
 
 ARG CC_INSTALLER_PATH
-ARG CC_DB_URL
-ARG SAG_ZIP_LICENCE_PATH
 ARG CC_ADMIN_PASSWORD="manage123"
 ARG CC_ADMIN_HOST="localhost"
 
@@ -60,8 +58,6 @@ RUN mkdir -p /home/$USERNAME/installer
 COPY $CC_INSTALLER_PATH /home/$USERNAME/installer/installer.sh
 # COPY scripts /home/$USERNAME/
 
-# Copy license files to the container
-COPY $CC_ZIP_LICENCE_PATH /home/$USERNAME/installer/license.zip
 
 # Create profile files for the user
 RUN touch /home/$USERNAME/.profile && \
@@ -86,7 +82,7 @@ RUN if [[ "$CC_ADMIN_HOST" == *.local ]]; then \
 
 
 # Remove the installer script
-RUN rm -rf /home/$USERNAME/installer
+# RUN rm -rf /home/$USERNAME/installer
 
 # Expose the necessary ports
 EXPOSE 8090 8091 8092 8093

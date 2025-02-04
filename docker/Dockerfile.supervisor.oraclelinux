@@ -79,7 +79,7 @@ RUN if [[ "$CC_ADMIN_HOST" == *.local ]]; then \
     fi
 
 # Remove the installer script
-RUN rm -rf /home/$USERNAME/installer
+# RUN rm -rf /home/$USERNAME/installer
 
 # Expose the necessary ports
 EXPOSE 8090 8091 8092 8093
