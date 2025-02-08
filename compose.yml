@@ -55,5 +55,14 @@ services:
     volumes:
       - sagwm-sql-server:/var/opt/mssql
 
+  sagwm-keycloak:
+    container_name: sagwm-keycloak-auth-server
+    image: quay.io/keycloak/keycloak:26.1.1
+    command: start-dev
+    ports:
+      - "8585:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
 volumes:
   sagwm-sql-server:

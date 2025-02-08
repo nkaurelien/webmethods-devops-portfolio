@@ -77,7 +77,6 @@ cd C:\SAGCommandCentral\cc1015\CommandCentral\client\bin
 
 ```
 
-
 ### Install new node and environement with SPM
 
 
@@ -86,6 +85,7 @@ cd C:\SAGCommandCentral\resources
 
 .\cc-def-10.15-fix8-w64.bat -D SPM -d C:\IBM\webMethods\wM1015 -H sagbase.wilow.local -s 8092 -S 8093 -p manage123 --accept-license
 
+ # Navigate to CC client installation directory
 
 cd C:\SAGCommandCentral\cc1015\CommandCentral\client\bin
 
@@ -166,3 +166,23 @@ cd C:\IBM\webMethods\wM1015\common\db\bin
 
 .\dbConfigurator.bat -a create -c Archive -v latest -d sqlserver -l "jdbc:wm:sqlserver://localhost:1433;databaseName=ARCHIVE1015;MaxPooledStatements=35" -u SQLUser1015 -p manage123 
 ```
+
+# Create IS Instance 
+
+Command Central will now add this instance in your landscape.
+
+- **Primary port:** 5555
+- **Diagnostic port:** 9999
+- **Secure port:** 5543
+- **JMX port:** 8075
+- **Database type:** SQL Server
+- **JDBC URL:** `jdbc:wm:sqlserver://localhost:1433;databaseName=LOGGER1015;MaxPooledStatements=20;SelectMethod=cursor`
+- **Database user:** SQLUser1015
+- **Password:** manage123
+- **Connection name:** ISInternal
+- **Packages to add to this instance:** WmBusinessConsole, WmBusinessRules, WmCDS, WmCloudStreams, WmCommandCentral, WmConsole, WmDashboard, WmDesigner, WmDeveloper, WmIntegrationServer, WmMonitor, WmPackageManager, WmProcessManager, WmPublish, WmRepository, WmServerManager, WmTestClient, WmTopology, WmTransformationServer, WmTransport, WmWebReports
+- **Instance name:** wm1015
+- **License key file:** 0000834756_PIE_10.0_TEST_ANY
+- **Register Windows service for automatic startup:** true
+- **Password for Administrator user:** manage123
+- **Change Administrator password on first login:** No
