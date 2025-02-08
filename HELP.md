@@ -5,8 +5,8 @@ https://docs.webmethods.io/on-premises/webmethods-command-central/en/10.3.0/webh
 ### CC Docs
 https://docs.webmethods.io/search?q=commande%20central
 
-### CC Docs
-https://docs.webmethods.io/search?q=commande%20central
+### Command line interfaces
+https://docs.webmethods.io/on-premises/webmethods-installer/en/11.1.0/install-upgrade-compendium/index.html#page/install-upgrade-compendium%2F_install_upgrade_compendium.1.543.html%23
 
 #### Sample Micro Templates
 https://docs.webmethods.io/on-premises/webmethods-command-central/en/10.7.0/admin-sag-prods-with-cc/index.html#page/cc-products-onlinehelp%2Fre-sample_templates.html%23
@@ -16,6 +16,15 @@ https://docs.webmethods.io/on-premises/webmethods-installer/en/10.5.0/install-up
 
 #### Default and Custom Product Administrator User Passwords
 https://docs.webmethods.io/on-premises/webmethods-command-central/en/11.1.0/webhelp/index.html#page/cce-webhelp/install.products.select.credentials.html
+
+
+#### delete landscape node
+
+https://docs.webmethods.io/on-premises/webmethods-installer/en/11.1.0/install-upgrade-compendium/index.html#page/install-upgrade-compendium/re-sagcc_delete_landscape_nodes.html
+
+# Good practice tuto
+
+
 
 # Usefull Link 
 

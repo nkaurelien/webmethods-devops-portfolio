@@ -6,11 +6,16 @@
 ```console
 cd C:\SAGCommandCentral\resources
 
-# SPM ports : 8792 (http), 8793 (https) , CCE use default ports
+# This will install : CCE and SPM
 
 .\cc-def-10.15-fix8-w64.bat -d C:\SAGCommandCentral\cc1015 -H sagbase.wilow.local -c 8190 -C 8191 -s 8192 -S 8193 -p manage123 --accept-license
 
 ```
+
+To install on a Windows system and configure CLI to point to Command Central:
+
+Exemple:
+`cc-def-10.7-release-w64.bat -d C:\AdminTools\sagcc -D CLI -H cchost.com  -c 9100 -C 9101 -p manage123`
 
 ### After Install
 You can logon to Command Central Web UI as Administrator/manage123
@@ -32,13 +37,6 @@ To use Command Central environment variables in future command prompt sessions e
 OR Add C:\SAGCommandCentral\cc102\CommandCentral\client\bin to environment system variable id the sagcc is not reconized
 
 
-# Install Webmethods SPM in new Node
-
-
-```console
-.\cc-def-10.15-fix8-w64.bat -D SPM -d C:\SoftwareAG\spm1015 -H sagbase.wilow.local -s 8292 -S 8293 -p manage456 --accept-license
-
-```
 
 ### After install
 
@@ -59,6 +57,9 @@ cd C:\SAGCommandCentral\cc1015\CommandCentral\client\bin
 
 .\sagcc add repository products image name=wM10.15-imageRepo-products -i C:\SAGCommandCentral\cc1015\resources\wM10_15.zip description="Webmethods Local images Repo for products"
 
+# add free downloaded repository product
+.\sagcc add repository products image name=wM10.15-free-imageRepo-products -i C:\SAGCommandCentral\cc1015\resources\webMFreeDownload1015Win64bit.zip description="Webmethods Local images Repo for products - free dowmloaded images"
+
 # add repository fixes
 
 .\sagcc add repository fixes image name=wM10.15-imageRepo-fixes -i C:\SAGCommandCentral\cc1015\resources/wM10_15_fixes.zip description="Webmethods Local images Repo for fixes"
@@ -68,16 +69,16 @@ cd C:\SAGCommandCentral\cc1015\CommandCentral\client\bin
 
 .\sagcc add repository products mirror name=wM10.15-imageRepo-products-mirror sourceRepos=wM10.15-imageRepo-products
 
+.\sagcc add repository products mirror name=wM10.15-free-imageRepo-products-mirror sourceRepos=wM10.15-free-imageRepo-products
+
 # add repo mirror fixes
 
 .\sagcc add repository fixes mirror name=wM10.15-imageRepo-fixes-mirror sourceRepos=wM10.15-imageRepo-fixes productRepos=wM10.15-imageRepo-products
 
-
-
-
 ```
 
-### Install new node and environement with SPM
+
+### Install new IS and UM node and environement with SPM
 
 
 ```console
@@ -91,11 +92,12 @@ cd C:\SAGCommandCentral\cc1015\CommandCentral\client\bin
 
 # Create node : IBM Platform Manager (SPM) installation 
 
-.\sagcc create landscape nodes name="Integration Server 1" alias=wmIs1 url=http://sagbase.wilow.local:8092
+.\sagcc create landscape nodes name="Integration Server 1" alias=wmIsServer1 url=http://sagbase.wilow.local:8092
+.\sagcc create landscape nodes name="UM Server 1" alias=wmUmServer1 url=http://sagbase.wilow.local:9092
 
-# Declaration of IPMs (SPMs) in CCE 
-
-.\sagcc add security credentials nodeAlias=wmIs1 runtimeComponentId=SPM-CONNECTION username=Administrator password=manage123
+## Security Credentials Commands
+.\sagcc add security credentials nodeAlias=wmIsServer1 runtimeComponentId=SPM-CONNECTION authenticationType=BASIC username=Administrator password=manage123
+.\sagcc add security credentials nodeAlias=wmUmServer1 runtimeComponentId=SPM-CONNECTION authenticationType=BASIC username=Administrator password=manage123
 
 # create environement
 
@@ -103,9 +105,20 @@ cd C:\SAGCommandCentral\cc1015\CommandCentral\client\bin
 
 # Attach a node (An Installation) to an environment 
 
-.\sagcc add landscape environments PROD_ESB_10.15 nodes nodeAlias=wmIs1
+.\sagcc add landscape environments PROD_ESB_10.15 nodes nodeAlias=wmIsServer1
+.\sagcc add landscape environments PROD_ESB_10.15 nodes nodeAlias=wmUmServer1
 
 ```
+
+
+if you need to delete later.
+
+.\sagcc delete landscape nodes alias=wmIs1
+
+See also
+
+sagcc add security credentials sharedsecret [environmentAlias=alias] secret=text_string  [options]
+
 
 # Provisionning (install product on node)
 
@@ -124,6 +137,10 @@ cd C:\SAGCommandCentral\cc1015\CommandCentral\client\bin
 
 
 ```
+
+see also
+
+sagcc exec provisioning fixes nodeAlias uninstall artifacts={fixName1,fixName2 | ALL} [options]
 
 # Configure Database (SqlServer)
 
