@@ -9,9 +9,8 @@ LABEL country="France"
 ARG CC_INSTALLER_PATH
 ARG CC_ADMIN_PASSWORD="manage123"
 ARG CC_ADMIN_HOST="localhost"
-ARG CC_SPM_NAME="SPM"
-ARG CC_SPM_HTTP_PORT="8292"
-ARG CC_SPM_HTTPS_PORT="8293"
+ARG SPM_HTTP_PORT="8292"
+ARG SPM_HTTPS_PORT="8293"
 
 # Set environment variables
 ENV USERNAME=wmuser
@@ -63,7 +62,7 @@ RUN touch /home/$USERNAME/.profile && \
     touch /home/$USERNAME/.bashrc
 
 # Run the installer script
-RUN /home/$USERNAME/installer/installer.sh -D ${CC_SPM_NAME} ${SAG_HOME} -H $CC_ADMIN_HOST  -s ${CC_SPM_HTTP_PORT} -S ${CC_SPM_HTTPS_PORT} -p $CC_ADMIN_PASSWORD --accept-license
+RUN /home/$USERNAME/installer/installer.sh -D SPM ${SAG_HOME} -H $CC_ADMIN_HOST  -s ${SPM_HTTP_PORT} -S ${SPM_HTTPS_PORT} -p $CC_ADMIN_PASSWORD --accept-license
 
 
 # Append SAG environment variables to the user's profile
@@ -85,7 +84,7 @@ RUN if [[ "$CC_ADMIN_HOST" == *.local ]]; then \
 RUN rm -rf /home/$USERNAME/installer
 
 # Expose the necessary ports
-EXPOSE ${CC_SPM_HTTP_PORT} ${CC_SPM_HTTPS_PORT}
+EXPOSE ${SPM_HTTP_PORT} ${SPM_HTTPS_PORT}
 
 # Switch back to root to configure supervisor
 USER root
@@ -109,7 +108,8 @@ EOF
 RUN cat <<'EOF' > /usr/local/bin/start-supervisor.sh
 #!/bin/bash
 /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
-tail -f /dev/null
+# Tail the supervisor log file to keep the container running
+tail -f /var/log/supervisor/supervisord.log
 EOF
 
 # Make the script executable

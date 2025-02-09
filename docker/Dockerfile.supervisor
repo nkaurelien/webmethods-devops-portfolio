@@ -9,6 +9,10 @@ LABEL country="France"
 ARG CC_INSTALLER_PATH
 ARG CC_ADMIN_PASSWORD="manage123"
 ARG CC_ADMIN_HOST="localhost"
+ARG CCE_HTTP_PORT="8090"
+ARG CCE_HTTPS_PORT="8091"
+ARG SPM_HTTP_PORT="8092"
+ARG SPM_HTTPS_PORT="8093"
 
 # Set environment variables
 ENV USERNAME=wmuser
@@ -64,7 +68,7 @@ RUN touch /home/$USERNAME/.profile && \
     touch /home/$USERNAME/.bashrc
 
 # Run the installer script
-RUN /home/$USERNAME/installer/installer.sh -d $SAG_HOME -H $CC_ADMIN_HOST -c 8090 -C 8091 -s 8092 -S 8093 -p $CC_ADMIN_PASSWORD --accept-license
+RUN /home/$USERNAME/installer/installer.sh -d $SAG_HOME -H $CC_ADMIN_HOST -c ${CCE_HTTP_PORT} -C ${CCE_HTTPS_PORT} -s ${SPM_HTTP_PORT} -S ${SPM_HTTPS_PORT} -p $CC_ADMIN_PASSWORD --accept-license
 
 # Append SAG environment variables to the user's profile
 RUN if [ -f "/home/$USERNAME/.sag/profile" ]; then \
@@ -85,7 +89,7 @@ RUN if [[ "$CC_ADMIN_HOST" == *.local ]]; then \
 # RUN rm -rf /home/$USERNAME/installer
 
 # Expose the necessary ports
-EXPOSE 8090 8091 8092 8093
+EXPOSE ${CCE_HTTP_PORT} ${CCE_HTTPS_PORT} ${SPM_HTTP_PORT} ${SPM_HTTPS_PORT}
 
 # Switch back to root to configure supervisor
 USER root
@@ -119,7 +123,9 @@ EOF
 RUN cat <<'EOF' > /usr/local/bin/start-supervisor.sh
 #!/bin/bash
 /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
-tail -f /dev/null
+
+# Tail the supervisor log file to keep the container running
+tail -f /var/log/supervisor/supervisord.log
 EOF
 
 # Create a script to start commandcentral without supervisor if needed and keep the container running
@@ -128,6 +134,12 @@ RUN cat <<'EOF' > /usr/local/bin/start-commandcentral.sh
 mkdir -p /home/$USERNAME/logs && chown -R $USER_UID:$GROUP_GID /home/$USERNAME/logs
 nohup $SAG_HOME/profiles/CCE/bin/startup.sh > /home/$USERNAME/logs/commandcentral.log 2>&1 &
 nohup $SAG_HOME/profiles/SPM/bin/startup.sh > /home/$USERNAME/logs/platformmanager.log 2>&1 &
+
+# Tail both log files simultaneously with prefixing to keep the container running
+tail -f /home/$USERNAME/logs/commandcentral.log /home/$USERNAME/logs/platformmanager.log | awk '
+/==> \/home\/\$USERNAME\/logs\/commandcentral.log <==/ {prefix="[CommandCentral] "; next}
+/==> \/home\/\$USERNAME\/logs\/platformmanager.log <==/ {prefix="[PlatformManager] "; next}
+{print prefix $0}'
 # tail -f /dev/null
 EOF
 
