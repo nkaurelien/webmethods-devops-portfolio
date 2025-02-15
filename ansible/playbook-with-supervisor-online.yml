@@ -16,7 +16,8 @@
     cce_https_port: 8091
     spm_http_port: 8092
     spm_https_port: 8093
-    cc_installer_path: "/installer/cc-def-10.15-fix8-lnxamd64.sh"
+    cc_installer_url: ""
+    cc_installer_path: "/home/{{ username }}/installer/installer.sh"
     installer_flag_file: "/home/{{ username }}/.installer_run"
 
   tasks:
@@ -88,13 +89,13 @@
         - "{{ sag_home }}/resources"
         - "/home/{{ username }}/installer"
 
-    # - name: Copy installer script
-    #   copy:
-    #     src: "{{ cc_cc_installer_path }}"
-    #     dest: "/home/{{ username }}/installer/installer.sh"
-    #     owner: "{{ username }}"
-    #     group: "{{ groupname }}"
-    #     mode: '0755'
+
+    - name: Download installer script
+      get_url:
+        url: "{{ cc_installer_url }}"
+        dest: "{{ cc_installer_path }}"
+        mode: '0755'
+        when: cc_installer_url != ""
 
     - name: Set permissions for the installer script
       file:
