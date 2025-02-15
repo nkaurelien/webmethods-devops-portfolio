@@ -1,0 +1,136 @@
+---
+- name: Provision wmuser VM
+  hosts: all
+  become: yes
+  vars:
+    username: "wmuser"
+    groupname: "sagwm"
+    user_uid: 1234
+    group_gid: 1234
+    password: "manage123"
+    cc_admin_password: "manage123"
+    sag_home: "/opt/SAGCommandCentral"
+    installer_path: "/installer/cc-def-10.15-fix8-lnxamd64.sh"
+    installer_flag_file: "/home/{{ username }}/.installer_run"
+
+  tasks:
+    - name: Update the package list
+      apt:
+        update_cache: yes
+
+    - name: Create a custom group
+      group:
+        name: "{{ groupname }}"
+        gid: "{{ group_gid }}"
+
+    - name: Create a custom user
+      user:
+        name: "{{ username }}"
+        uid: "{{ user_uid }}"
+        group: "{{ groupname }}"
+        shell: /bin/bash
+        password: "{{ password | password_hash('sha512') }}"
+
+    - name: Copy SSH keys
+      copy:
+        src: /home/vagrant/.ssh/
+        dest: /home/{{ username }}/.ssh/
+        owner: "{{ username }}"
+        group: "{{ groupname }}"
+        mode: '0600'
+      when: ansible_facts['user_dir'] == '/home/vagrant'
+
+    - name: Allow the user to run sudo commands without a password
+      lineinfile:
+        path: /etc/sudoers.d/{{ username }}
+        state: present
+        create: yes
+        line: "{{ username }} ALL=(ALL) NOPASSWD: ALL"
+        validate: 'visudo -cf %s'
+
+    - name: Create necessary directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ groupname }}"
+      loop:
+        - "{{ sag_home }}"
+        - "{{ sag_home }}/installer"
+        - "{{ sag_home }}/resources"
+        - "/home/{{ username }}/installer"
+
+    - name: Set permissions for the installer script
+      file:
+        path: "{{ installer_path }}"
+        owner: "{{ username }}"
+        group: "{{ groupname }}"
+        mode: '0755'
+
+    - name: Create profile files for the user
+      file:
+        path: "/home/{{ username }}/{{ item }}"
+        state: touch
+        owner: "{{ username }}"
+        group: "{{ groupname }}"
+      loop:
+        - ".profile"
+        - ".bashrc"
+
+    - name: Check if installer has already run
+      stat:
+        path: "{{ installer_flag_file }}"
+      register: installer_flag
+
+    - name: Run the installer script
+      command: "{{ installer_path }} -d {{ sag_home }} -H localhost -c 8090 -C 8091 -s 8092 -S 8093 -p {{ cc_admin_password }} --accept-license"
+      become_user: "{{ username }}"
+      when: not installer_flag.stat.exists
+      register: installer_output
+      # ignore_errors: yes
+
+    - name: Debug installer output
+      debug:
+        var: installer_output.stdout_lines
+
+    # TODO Log the installer output to a file
+
+    - name: Create installer flag file
+      file:
+        path: "{{ installer_flag_file }}"
+        state: touch
+        owner: "{{ username }}"
+        group: "{{ groupname }}"
+      when: not installer_flag.stat.exists and installer_output.rc == 0
+
+    - name: Check if SAG profile file exists
+      stat:
+        path: "/home/{{ username }}/.sag/profile"
+      register: sag_profile
+        
+    - name: Append SAG environment variables to the user's profile
+      shell: |
+        if [ -f "/home/{{ username }}/.sag/profile" ]; then
+          echo "" >> /home/{{ username }}/.profile
+          echo "# SAG Environment" >> /home/{{ username }}/.profile
+          cat /home/{{ username }}/.sag/profile >> /home/{{ username }}/.profile
+        fi
+      become: yes
+      become_user: "{{ username }}"
+      when: sag_profile.stat.exists
+
+    - name: Create a script to start commandcentral
+      copy:
+        dest: "/home/{{ username }}/start-commandcentral.sh"
+        content: |
+          #!/bin/bash
+          mkdir -p /home/{{ username }}/logs && chown -R {{ user_uid }}:{{ group_gid }} /home/{{ username }}/logs
+          nohup {{ sag_home }}/profiles/CCE/bin/startup.sh > /home/{{ username }}/logs/commandcentral.log 2>&1 &
+          nohup {{ sag_home }}/profiles/SPM/bin/startup.sh > /home/{{ username }}/logs/platformmanager.log 2>&1 &
+        owner: "{{ username }}"
+        group: "{{ groupname }}"
+        mode: '0755'
+
+    - name: Execute the start script
+      command: "/home/{{ username }}/start-commandcentral.sh"
+      become_user: "{{ username }}"

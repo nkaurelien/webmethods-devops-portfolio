@@ -27,16 +27,15 @@ Vagrant.configure("2") do |config|
     config.vm.network "forwarded_port", guest: port, host: port
   end
 
-  # Reboot after provisioning is complete
-  config.trigger.after [:provision] do |t|
-    t.name = "Reboot after provisioning"
-    t.run = { :inline => "vagrant reload" }
-  end
-
   # Sync the installer directory to the VM
-  config.vm.synced_folder "./docker/installer", "/installer", disabled: false
-  # config.vm.synced_folder ".", "/vagrant", disabled: false
+  config.vm.synced_folder "./installer", "/installer", disabled: false
 
   # Provision the VM with a shell script
-  config.vm.provision "shell", path: "scripts/cc-provision.sh"
+  # config.vm.provision "shell", path: "scripts/cc-provision.sh"
+
+  # Provision the VM with Ansible
+  config.vm.provision "ansible" do |ansible|
+    # ansible.playbook = "ansible/playbook.yml"
+    ansible.playbook = "ansible/playbook-with-supervisor.yml"
+  end
 end

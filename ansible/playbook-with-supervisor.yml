@@ -1,0 +1,244 @@
+---
+- name: Setup Command Central Environment
+  hosts: all
+  become: yes
+  vars:
+    username: wmuser
+    groupname: sagwm
+    user_uid: 1234
+    group_gid: 1234
+    password: manage123
+    sag_home: /opt/SAGCommandCentral
+    cc_cli_home: "{{ sag_home }}/CommandCentral/client"
+    cc_admin_host: localhost
+    cc_admin_password: "manage123"
+    cce_http_port: 8090
+    cce_https_port: 8091
+    spm_http_port: 8092
+    spm_https_port: 8093
+    installer_path: "/installer/cc-def-10.15-fix8-lnxamd64.sh"
+    installer_flag_file: "/home/{{ username }}/.installer_run"
+
+  tasks:
+    - name: Update apt package list
+      apt:
+        update_cache: yes
+
+    - name: Install necessary packages
+      apt:
+        name:
+          - sudo
+          - bash
+          - supervisor
+          - curl
+          - nano
+        state: present
+
+    - name: Remove apt lists
+      file:
+        path: /var/lib/apt/lists
+        state: absent
+
+    - name: Set default editor to nano
+      lineinfile:
+        path: /etc/profile
+        regexp: '^export EDITOR='
+        line: 'export EDITOR=nano'
+
+    - name: Create group
+      group:
+        name: "{{ groupname }}"
+        gid: "{{ group_gid }}"
+        state: present
+
+    - name: Create user
+      user:
+        name: "{{ username }}"
+        uid: "{{ user_uid }}"
+        group: "{{ groupname }}"
+        shell: /bin/bash
+        password: "{{ password | password_hash('sha512') }}"
+        state: present
+
+    - name: Copy SSH keys
+      copy:
+        src: /home/vagrant/.ssh/
+        dest: /home/{{ username }}/.ssh/
+        owner: "{{ username }}"
+        group: "{{ groupname }}"
+        mode: '0600'
+      when: ansible_facts['user_dir'] == '/home/vagrant'
+
+    - name: Allow passwordless sudo for the user
+      lineinfile:
+        path: /etc/sudoers.d/{{ username }}
+        line: "{{ username }} ALL=(ALL) NOPASSWD: ALL"
+        create: yes
+        validate: 'visudo -cf %s'
+
+    - name: Create necessary directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ user_uid }}"
+        group: "{{ group_gid }}"
+      loop:
+        - "{{ sag_home }}"
+        - "{{ sag_home }}/installer"
+        - "{{ sag_home }}/resources"
+        - "/home/{{ username }}/installer"
+
+    # - name: Copy installer script
+    #   copy:
+    #     src: "{{ cc_installer_path }}"
+    #     dest: "/home/{{ username }}/installer/installer.sh"
+    #     owner: "{{ username }}"
+    #     group: "{{ groupname }}"
+    #     mode: '0755'
+
+    # - name: Download installer script
+    #   get_url:
+    #     url: "{{ cc_installer_url }}"
+    #     dest: "/home/{{ username }}/installer/installer.sh"
+    #     mode: '0755'
+
+    - name: Set permissions for the installer script
+      file:
+        path: "{{ installer_path }}"
+        owner: "{{ username }}"
+        group: "{{ groupname }}"
+        mode: '0755'
+
+    - name: Create profile files for the user
+      file:
+        path: "/home/{{ username }}/{{ item }}"
+        state: touch
+        owner: "{{ username }}"
+        group: "{{ groupname }}"
+      loop:
+        - .profile
+        - .bashrc
+
+    - name: Check if installer has already run
+      stat:
+        path: "{{ installer_flag_file }}"
+      register: installer_flag
+
+    - name: Run the installer script
+      command: "{{ installer_path }} -d {{ sag_home }} -H {{ cc_admin_host }} -c {{ cce_http_port }} -C {{ cce_https_port }} -s {{ spm_http_port }} -S {{ spm_https_port }} -p {{ cc_admin_password }} --accept-license"
+      become_user: "{{ username }}"
+      when: not installer_flag.stat.exists
+      register: installer_output
+      # ignore_errors: yes
+
+
+    - name: Debug installer output
+      debug:
+        var: installer_output.stdout_lines
+
+    # TODO Log the installer output to a file
+
+    - name: Create installer flag file
+      file:
+        path: "{{ installer_flag_file }}"
+        state: touch
+        owner: "{{ username }}"
+        group: "{{ groupname }}"
+      when: not installer_flag.stat.exists and installer_output.rc == 0
+
+    - name: Check if SAG profile file exists
+      stat:
+        path: "/home/{{ username }}/.sag/profile"
+      register: sag_profile
+
+    - name: Append SAG environment variables to the user's profile
+      shell: |
+        if [ -f "/home/{{ username }}/.sag/profile" ]; then
+          echo "" >> /home/{{ username }}/.profile
+          echo "# SAG Environment" >> /home/{{ username }}/.profile
+          cat /home/{{ username }}/.sag/profile >> /home/{{ username }}/.profile
+        fi
+      become: yes
+      become_user: "{{ username }}"
+      when: sag_profile.stat.exists
+
+    - name: Add entry to /etc/hosts if CC_ADMIN_HOST ends with .local
+      lineinfile:
+        path: /etc/hosts
+        line: "127.0.0.1    {{ cc_admin_host }}"
+        create: yes
+      when: "'{{ cc_admin_host }}' is match('.*\\.local$')"
+
+    - name: Create supervisor configuration for Command Central
+      blockinfile:
+        path: /etc/supervisor/conf.d/commandcentral.conf
+        block: |
+          [program:commandcentral]
+          command={{ sag_home }}/profiles/CCE/bin/startup.sh
+          autostart=true
+          autorestart=true
+          user={{ username }}
+          stdout_logfile=/var/log/supervisor/%(program_name)s_output.log
+          stderr_logfile=/var/log/supervisor/%(program_name)s_output.err.log
+        create: yes
+
+    - name: Create supervisor configuration for Platform Manager
+      blockinfile:
+        path: /etc/supervisor/conf.d/platformmanager.conf
+        block: |
+          [program:platformmanager]
+          command={{ sag_home }}/profiles/SPM/bin/startup.sh
+          autostart=true
+          autorestart=true
+          user={{ username }}
+          stdout_logfile=/var/log/supervisor/%(program_name)s_output.log
+          stderr_logfile=/var/log/supervisor/%(program_name)s_output.err.log
+        create: yes
+
+    - name: Create start-supervisor script
+      copy:
+        dest: /usr/local/bin/start-supervisor.sh
+        content: |
+          #!/bin/bash
+          /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
+          tail -f /var/log/supervisor/supervisord.log
+        mode: '0755'
+
+    - name: Create start-commandcentral script
+      copy:
+        dest: /usr/local/bin/start-commandcentral.sh
+        content: |
+          #!/bin/bash
+          mkdir -p /home/{{ username }}/logs && chown -R {{ user_uid }}:{{ group_gid }} /home/{{ username }}/logs
+          nohup {{ sag_home }}/profiles/CCE/bin/startup.sh > /home/{{ username }}/logs/commandcentral.log 2>&1 &
+          nohup {{ sag_home }}/profiles/SPM/bin/startup.sh > /home/{{ username }}/logs/platformmanager.log 2>&1 &
+          tail -f /home/{{ username }}/logs/commandcentral.log /home/{{ username }}/logs/platformmanager.log | awk '
+          /==> \/home\/{{ username }}\/logs\/commandcentral.log <==/ {prefix="[CommandCentral] "; next}
+          /==> \/home\/{{ username }}\/logs\/platformmanager.log <==/ {prefix="[PlatformManager] "; next}
+          {print prefix $0}'
+        mode: '0755'
+
+    - name: Ensure supervisor is enabled and started
+      systemd:
+        name: supervisor
+        enabled: yes
+        state: started
+
+  #   - name: Expose necessary ports
+  #     firewalld:
+  #       port: "{{ item }}/tcp"
+  #       permanent: yes
+  #       state: enabled
+  #     loop:
+  #       - "{{ cce_http_port }}"
+  #       - "{{ cce_https_port }}"
+  #       - "{{ spm_http_port }}"
+  #       - "{{ spm_https_port }}"
+  #     notify:
+  #       - Restart firewalld
+
+  # handlers:
+  #   - name: Restart firewalld
+  #     systemd:
+  #       name: firewalld
+  #       state: restarted
