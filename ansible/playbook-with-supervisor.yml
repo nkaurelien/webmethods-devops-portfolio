@@ -16,7 +16,7 @@
     cce_https_port: 8091
     spm_http_port: 8092
     spm_https_port: 8093
-    installer_path: "/installer/cc-def-10.15-fix8-lnxamd64.sh"
+    cc_installer_path: "/installer/cc-def-10.15-fix8-lnxamd64.sh"
     installer_flag_file: "/home/{{ username }}/.installer_run"
 
   tasks:
@@ -90,7 +90,7 @@
 
     # - name: Copy installer script
     #   copy:
-    #     src: "{{ cc_installer_path }}"
+    #     src: "{{ cc_cc_installer_path }}"
     #     dest: "/home/{{ username }}/installer/installer.sh"
     #     owner: "{{ username }}"
     #     group: "{{ groupname }}"
@@ -104,7 +104,7 @@
 
     - name: Set permissions for the installer script
       file:
-        path: "{{ installer_path }}"
+        path: "{{ cc_installer_path }}"
         owner: "{{ username }}"
         group: "{{ groupname }}"
         mode: '0755'
@@ -125,7 +125,7 @@
       register: installer_flag
 
     - name: Run the installer script
-      command: "{{ installer_path }} -d {{ sag_home }} -H {{ cc_admin_host }} -c {{ cce_http_port }} -C {{ cce_https_port }} -s {{ spm_http_port }} -S {{ spm_https_port }} -p {{ cc_admin_password }} --accept-license"
+      command: "{{ cc_installer_path }} -d {{ sag_home }} -H {{ cc_admin_host }} -c {{ cce_http_port }} -C {{ cce_https_port }} -s {{ spm_http_port }} -S {{ spm_https_port }} -p {{ cc_admin_password }} --accept-license"
       become_user: "{{ username }}"
       when: not installer_flag.stat.exists
       register: installer_output
