@@ -35,10 +35,10 @@
           - nano
         state: present
 
-    - name: Remove apt lists
-      file:
-        path: /var/lib/apt/lists
-        state: absent
+    # - name: Remove apt lists
+    #   file:
+    #     path: /var/lib/apt/lists
+    #     state: absent
 
     - name: Set default editor to nano
       lineinfile:
@@ -88,6 +88,7 @@
         - "{{ sag_home }}/installer"
         - "{{ sag_home }}/resources"
         - "/home/{{ username }}/installer"
+        - "{{ cc_installer_path | dirname }}"
 
 
     - name: Download installer script
@@ -95,7 +96,17 @@
         url: "{{ cc_installer_url }}"
         dest: "{{ cc_installer_path }}"
         mode: '0755'
-        when: cc_installer_url != ""
+      when: cc_installer_url != ""
+
+    - name: Get installer script file size
+      stat:
+        path: "{{ cc_installer_path }}"
+      register: installer_file_info
+
+    - name: Print installer script file size
+      debug:
+        msg: "The size of the installer script is {{ installer_file_info.stat.size }} bytes."
+
 
     - name: Set permissions for the installer script
       file:
