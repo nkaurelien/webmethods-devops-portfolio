@@ -2,7 +2,7 @@ ENV['VAGRANT_DEFAULT_PROVIDER'] = 'virtualbox'
 
 Vagrant.configure("2") do |config|
   # Use the Ubuntu box
-  config.vm.box = "ubuntu/bionic64"  # Consider using a more recent version
+  config.vm.box = "ubuntu/jammy64"  # Consider using a more recent version
 
   # Set ssh username
   VAGRANT_COMMAND = ARGV[0]

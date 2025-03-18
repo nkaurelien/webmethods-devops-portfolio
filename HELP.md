@@ -22,6 +22,22 @@ https://docs.webmethods.io/on-premises/webmethods-command-central/en/11.1.0/webh
 
 https://docs.webmethods.io/on-premises/webmethods-installer/en/11.1.0/install-upgrade-compendium/index.html#page/install-upgrade-compendium/re-sagcc_delete_landscape_nodes.html
 
+### Software_AG_Installer
+
+#### Software_AG_Installer Using Console Mode to Install
+
+https://documentation.softwareag.com/a_installer_and_update_manager/10-5_Software_AG_Installer_webhelp/index.html#page/using-sag-installer-webhelp%2Fto-console_mode_11.html%23
+
+```console
+export SAG_INSTALLER_BIN="SoftwareAGInstaller20220718-Linux_x86_64.bin"
+export full_path_to_image_file="/run/media/nkaurelien/01D981044166F8E0/MCS/WebMethodsSetup/WM1015Setup/webMFreeDownload1015Linux.zip"
+
+
+sh $SAG_INSTALLER_BIN -validateImage  $full_path_to_image_file -console
+sh $SAG_INSTALLER_BIN -imageContents  $full_path_to_image_file -console
+sh $SAG_INSTALLER_BIN -readImage $full_path_to_image_file -console
+```
+
 # Good practice tuto
 
 
