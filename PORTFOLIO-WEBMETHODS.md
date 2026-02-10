@@ -1,13 +1,15 @@
 ---
-title: "Portfolio webMethods - Infrastructure & DevOps"
+title: "Portfolio webMethods - Infrastructure et DevOps"
 author: "Aurelien NK"
-date: "Février 2025"
-subtitle: "Automatisation du déploiement Software AG webMethods Command Central"
+date: "Fevrier 2025"
+subtitle: "Automatisation du deploiement Software AG webMethods Command Central"
 lang: fr
 geometry: margin=2.5cm
 fontsize: 11pt
 documentclass: article
 header-includes:
+  - \usepackage[utf8]{inputenc}
+  - \usepackage[T1]{fontenc}
   - \usepackage{fancyhdr}
   - \pagestyle{fancy}
   - \fancyhead[L]{Portfolio webMethods}
@@ -15,60 +17,60 @@ header-includes:
   - \fancyfoot[C]{\thepage}
 ---
 
-# Portfolio webMethods - Infrastructure & DevOps
+# Portfolio webMethods - Infrastructure et DevOps
 
 **Candidat** : Aurelien NK
-**Poste visé** : Développeur webMethods
-**Documentation en ligne** : [https://nkaurelien.github.io/webmethods-devops-portfolio](https://nkaurelien.github.io/webmethods-devops-portfolio)
-**Code source** : [https://github.com/nkaurelien/webmethods-devops-portfolio](https://github.com/nkaurelien/webmethods-devops-portfolio)
+**Poste vise** : Developpeur webMethods
+**Documentation en ligne** : https://nkaurelien.github.io/webmethods-devops-portfolio
+**Code source** : https://github.com/nkaurelien/webmethods-devops-portfolio
 
 ---
 
-## Résumé exécutif
+## Resume executif
 
-Ce document présente un projet personnel démontrant mes compétences en **développement webMethods** et **DevOps**. J'ai conçu et implémenté une infrastructure complète d'automatisation pour le déploiement de **Software AG webMethods Command Central** sur différents environnements (local et cloud).
+Ce document presente un projet personnel demontrant mes competences en **developpement webMethods** et **DevOps**. J'ai concu et implemente une infrastructure complete d'automatisation pour le deploiement de **Software AG webMethods Command Central** sur differents environnements (local et cloud).
 
-### Points clés
+### Points cles
 
-- **Automatisation complète** : Déploiement sans intervention manuelle
+- **Automatisation complete** : Deploiement sans intervention manuelle
 - **Multi-environnement** : Docker, Vagrant (local) et AWS (cloud)
 - **Infrastructure as Code** : Terraform + Ansible
-- **Documentation** : Site MkDocs avec guides détaillés
+- **Documentation** : Site MkDocs avec guides detailles
 
 ---
 
 ## Objectifs du projet
 
-1. **Approfondir mes connaissances** sur webMethods Command Central et l'écosystème Software AG
-2. **Démontrer mes compétences DevOps** à travers l'automatisation infrastructure
-3. **Créer une solution reproductible** pour le déploiement de la plateforme webMethods
-4. **Documenter mon apprentissage** de manière professionnelle
+1. **Approfondir mes connaissances** sur webMethods Command Central et l'ecosysteme Software AG
+2. **Demontrer mes competences DevOps** a travers l'automatisation infrastructure
+3. **Creer une solution reproductible** pour le deploiement de la plateforme webMethods
+4. **Documenter mon apprentissage** de maniere professionnelle
 
 ---
 
-## Compétences démontrées
+## Competences demontrees
 
 ### Software AG webMethods
 
-| Compétence | Niveau | Détails |
+| Competence | Niveau | Details |
 |------------|--------|---------|
-| Command Central (CCE) | Intermédiaire | Installation, configuration, administration |
-| Platform Manager (SPM) | Intermédiaire | Gestion des noeuds, déploiements |
-| CLI sagcc | Intermédiaire | Automatisation via ligne de commande |
-| Architecture | Intermédiaire | Landscapes, environments, nodes |
+| Command Central (CCE) | Intermediaire | Installation, configuration, administration |
+| Platform Manager (SPM) | Intermediaire | Gestion des noeuds, deploiements |
+| CLI sagcc | Intermediaire | Automatisation via ligne de commande |
+| Architecture | Intermediaire | Landscapes, environments, nodes |
 | Licensing | Base | Import et gestion des licences |
 
-### DevOps & Infrastructure
+### DevOps et Infrastructure
 
-| Compétence | Niveau | Détails |
+| Competence | Niveau | Details |
 |------------|--------|---------|
-| Terraform | Intermédiaire | Provisioning AWS, modules, providers |
-| Ansible | Intermédiaire | Playbooks modulaires, idempotence |
-| Docker | Avancé | Multi-stage, Compose, Supervisor |
-| Vagrant | Intermédiaire | VMs reproductibles, provisioning |
-| Shell scripting | Avancé | Bash, gestion d'erreurs, fonctions |
-| Git | Avancé | Workflow, branches, historique |
-| AWS | Intermédiaire | EC2, Security Groups, IAM |
+| Terraform | Intermediaire | Provisioning AWS, modules, providers |
+| Ansible | Intermediaire | Playbooks modulaires, idempotence |
+| Docker | Avance | Multi-stage, Compose, Supervisor |
+| Vagrant | Intermediaire | VMs reproductibles, provisioning |
+| Shell scripting | Avance | Bash, gestion d'erreurs, fonctions |
+| Git | Avance | Workflow, branches, historique |
+| AWS | Intermediaire | EC2, Security Groups, IAM |
 
 ---
 
@@ -77,30 +79,30 @@ Ce document présente un projet personnel démontrant mes compétences en **dév
 ### Vue d'ensemble
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Options de déploiement                    │
-├─────────────────┬─────────────────┬─────────────────────────┤
-│   Docker        │   Vagrant       │   AWS (Terraform)       │
-│   Compose       │   + Ansible     │   + Ansible             │
-├─────────────────┴─────────────────┴─────────────────────────┤
-│                    Plateforme webMethods                     │
-│  ┌─────────────────┐    ┌─────────────────┐                 │
-│  │ Command Central │    │ Platform Manager │                │
-│  │   (CCE)         │◄──►│   (SPM)          │                │
-│  │   :8090/:8091   │    │   :8092/:8093    │                │
-│  └─────────────────┘    └─────────────────┘                 │
-├─────────────────────────────────────────────────────────────┤
-│                    Services supports                         │
-│  ┌─────────────────┐    ┌─────────────────┐                 │
-│  │   SQL Server    │    │    Keycloak     │                 │
-│  │     :1433       │    │     :8585       │                 │
-│  └─────────────────┘    └─────────────────┘                 │
-└─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------+
+|                    Options de deploiement                    |
++-----------------+-----------------+-------------------------+
+|   Docker        |   Vagrant       |   AWS (Terraform)       |
+|   Compose       |   + Ansible     |   + Ansible             |
++-----------------+-----------------+-------------------------+
+|                    Plateforme webMethods                     |
+|  +-------------------+    +--------------------+             |
+|  | Command Central   |<-->| Platform Manager   |             |
+|  |   (CCE)           |    |   (SPM)            |             |
+|  |   :8090/:8091     |    |   :8092/:8093      |             |
+|  +-------------------+    +--------------------+             |
++-------------------------------------------------------------+
+|                    Services supports                         |
+|  +-------------------+    +--------------------+             |
+|  |   SQL Server      |    |    Keycloak        |             |
+|  |     :1433         |    |     :8585          |             |
+|  +-------------------+    +--------------------+             |
++-------------------------------------------------------------+
 ```
 
 ### Stack technique
 
-| Catégorie | Technologies |
+| Categorie | Technologies |
 |-----------|-------------|
 | **Plateforme** | webMethods 10.15, Command Central, SPM |
 | **IaC** | Terraform 1.2+, Ansible |
@@ -112,56 +114,56 @@ Ce document présente un projet personnel démontrant mes compétences en **dév
 
 ---
 
-## Réalisations détaillées
+## Realisations detaillees
 
 ### 1. Containerisation Docker
 
-J'ai créé **6 variantes de Dockerfiles** pour différents cas d'usage :
+J'ai cree **6 variantes de Dockerfiles** pour differents cas d'usage :
 
 - **Ubuntu 22.04 + Supervisor** : Version production-ready
 - **Oracle Linux 8** : Alternative enterprise
 - **SPM standalone** : Pour les noeuds distants
-- **RHEL 8, Windows, Systemd** : En développement
+- **RHEL 8, Windows, Systemd** : En developpement
 
-**Défi résolu** : Utilisation de **Supervisor** au lieu de systemd pour la gestion des processus dans les containers, car systemd nécessite des privilèges élevés incompatibles avec les bonnes pratiques Docker.
+**Defi resolu** : Utilisation de **Supervisor** au lieu de systemd pour la gestion des processus dans les containers, car systemd necessite des privileges eleves incompatibles avec les bonnes pratiques Docker.
 
 ### 2. Playbooks Ansible
 
-J'ai développé **3 playbooks** avec une complexité croissante (624 lignes au total) :
+J'ai developpe **3 playbooks** avec une complexite croissante (624 lignes au total) :
 
-| Playbook | Lignes | Fonctionnalités |
+| Playbook | Lignes | Fonctionnalites |
 |----------|--------|-----------------|
-| `playbook.yml` | 136 | Installation basique |
-| `playbook-with-supervisor.yml` | 238 | + Gestion des services |
-| `playbook-with-supervisor-online.yml` | 250 | + Téléchargement installateur |
+| playbook.yml | 136 | Installation basique |
+| playbook-with-supervisor.yml | 238 | + Gestion des services |
+| playbook-with-supervisor-online.yml | 250 | + Telechargement installateur |
 
-**Caractéristiques** :
+**Caracteristiques** :
 
-- Idempotence garantie (exécution multiple sans effet de bord)
-- Variables paramétrables
+- Idempotence garantie (execution multiple sans effet de bord)
+- Variables parametrables
 - Gestion des utilisateurs et permissions
 - Configuration Supervisor automatique
 
 ### 3. Infrastructure Terraform
 
-J'ai implémenté une **infrastructure AWS complète** :
+J'ai implemente une **infrastructure AWS complete** :
 
 - **EC2 Instance** : Ubuntu 22.04, t2.medium
 - **Security Groups** : Ports webMethods (8090-8094), IS (5555), UM (9200)
-- **Key Pair** : Gestion des clés SSH
-- **Integration Ansible** : Exécution automatique du playbook post-création
+- **Key Pair** : Gestion des cles SSH
+- **Integration Ansible** : Execution automatique du playbook post-creation
 
-**Innovation** : Utilisation du provider Terraform-Ansible pour une chaîne de déploiement entièrement automatisée.
+**Innovation** : Utilisation du provider Terraform-Ansible pour une chaine de deploiement entierement automatisee.
 
 ### 4. Documentation MkDocs
 
-J'ai créé un **site de documentation complet** avec :
+J'ai cree un **site de documentation complet** avec :
 
 - Architecture et diagrammes (Mermaid)
 - Guides webMethods (CCE, SPM, CLI)
 - Documentation DevOps (Terraform, Ansible, Docker, Vagrant)
 - Journal d'apprentissage
-- Guide de référence pour entretien
+- Guide de reference pour entretien
 
 ---
 
@@ -169,35 +171,35 @@ J'ai créé un **site de documentation complet** avec :
 
 ```
 webmethods-devops-portfolio/
-├── ansible/                          # Playbooks Ansible
-│   ├── playbook.yml
-│   ├── playbook-with-supervisor.yml
-│   └── playbook-with-supervisor-online.yml
-├── docker/                           # Dockerfiles
-│   ├── Dockerfile.supervisor
-│   ├── Dockerfile.supervisor.oraclelinux
-│   └── Dockerfile.wmSpm.supervisor
-├── terraform/                        # Infrastructure AWS
-│   ├── main.tf
-│   ├── variables.tf
-│   ├── security.tf
-│   ├── ansible.tf
-│   └── data.tf
-├── scripts/                          # Scripts de provisioning
-│   ├── 00-setup-env.sh
-│   ├── 01-import_licences.sh
-│   └── cc-provision.sh
-├── docs/                             # Documentation MkDocs
-├── compose.yml                       # Docker Compose
-├── Vagrantfile                       # Configuration Vagrant
-└── mkdocs.yml                        # Configuration MkDocs
+|-- ansible/                          # Playbooks Ansible
+|   |-- playbook.yml
+|   |-- playbook-with-supervisor.yml
+|   +-- playbook-with-supervisor-online.yml
+|-- docker/                           # Dockerfiles
+|   |-- Dockerfile.supervisor
+|   |-- Dockerfile.supervisor.oraclelinux
+|   +-- Dockerfile.wmSpm.supervisor
+|-- terraform/                        # Infrastructure AWS
+|   |-- main.tf
+|   |-- variables.tf
+|   |-- security.tf
+|   |-- ansible.tf
+|   +-- data.tf
+|-- scripts/                          # Scripts de provisioning
+|   |-- 00-setup-env.sh
+|   |-- 01-import_licences.sh
+|   +-- cc-provision.sh
+|-- docs/                             # Documentation MkDocs
+|-- compose.yml                       # Docker Compose
+|-- Vagrantfile                       # Configuration Vagrant
++-- mkdocs.yml                        # Configuration MkDocs
 ```
 
 ---
 
-## Métriques du projet
+## Metriques du projet
 
-| Métrique | Valeur |
+| Metrique | Valeur |
 |----------|--------|
 | **Commits Git** | 22 |
 | **Lignes de code** | 750+ |
@@ -206,7 +208,7 @@ webmethods-devops-portfolio/
 | **Dockerfiles** | 6 variantes |
 | **Modules Terraform** | 7 fichiers |
 | **Pages documentation** | 12 |
-| **Durée du projet** | ~2 semaines |
+| **Duree du projet** | environ 2 semaines |
 
 ---
 
@@ -215,7 +217,7 @@ webmethods-devops-portfolio/
 ### Commande sagcc - Ajout d'un node
 
 ```bash
-# Créer un node dans le landscape
+# Creer un node dans le landscape
 sagcc create landscape nodes \
     name="Production IS 1" \
     alias=prodIs1 \
@@ -229,7 +231,7 @@ sagcc add security credentials \
     username=Administrator \
     password=manage123
 
-# Vérifier le status
+# Verifier le status
 sagcc get landscape nodes prodIs1 status
 ```
 
@@ -278,52 +280,52 @@ resource "aws_instance" "sag_cc_spm_server" {
 
 ### Chronologie
 
-| Période | Phase | Réalisations |
+| Periode | Phase | Realisations |
 |---------|-------|--------------|
-| 3-8 Fév | Containerisation | Docker, Supervisor, multi-images |
-| 8-9 Fév | Documentation | Guides installation, HELP.md |
-| 9-14 Fév | Orchestration | Ansible playbooks, Vagrant |
-| 15-16 Fév | Infrastructure | Terraform AWS, intégration complète |
+| 3-8 Fev | Containerisation | Docker, Supervisor, multi-images |
+| 8-9 Fev | Documentation | Guides installation, HELP.md |
+| 9-14 Fev | Orchestration | Ansible playbooks, Vagrant |
+| 15-16 Fev | Infrastructure | Terraform AWS, integration complete |
 
-### Problèmes résolus
+### Problemes resolus
 
-1. **Systemd dans Docker** → Solution : Supervisor comme init system
-2. **Permissions fichiers** → Solution : UID/GID fixes (1234)
-3. **Idempotence Ansible** → Solution : Flag files et conditions
-4. **Intégration Terraform-Ansible** → Solution : Provider jdziat/ansible
+1. **Systemd dans Docker** - Solution : Supervisor comme init system
+2. **Permissions fichiers** - Solution : UID/GID fixes (1234)
+3. **Idempotence Ansible** - Solution : Flag files et conditions
+4. **Integration Terraform-Ansible** - Solution : Provider jdziat/ansible
 
 ---
 
-## Prochaines étapes envisagées
+## Prochaines etapes envisagees
 
-- [ ] Haute disponibilité : Cluster CCE avec load balancer
-- [ ] CI/CD : Pipeline GitHub Actions pour déploiement continu
-- [ ] Monitoring : Intégration Prometheus/Grafana
-- [ ] Secrets : HashiCorp Vault pour credentials
-- [ ] Templates : Provisioning automatisé IS/UM/TN
+- Haute disponibilite : Cluster CCE avec load balancer
+- CI/CD : Pipeline GitHub Actions pour deploiement continu
+- Monitoring : Integration Prometheus/Grafana
+- Secrets : HashiCorp Vault pour credentials
+- Templates : Provisioning automatise IS/UM/TN
 
 ---
 
 ## Conclusion
 
-Ce projet démontre ma capacité à :
+Ce projet demontre ma capacite a :
 
 1. **Apprendre en autonomie** une technologie enterprise (webMethods)
 2. **Appliquer les meilleures pratiques DevOps** (IaC, automatisation, documentation)
-3. **Résoudre des problèmes techniques** complexes
-4. **Documenter mon travail** de manière professionnelle
+3. **Resoudre des problemes techniques** complexes
+4. **Documenter mon travail** de maniere professionnelle
 
-Je suis motivé pour approfondir mes compétences webMethods dans un contexte professionnel et contribuer à des projets d'intégration enterprise.
+Je suis motive pour approfondir mes competences webMethods dans un contexte professionnel et contribuer a des projets d'integration enterprise.
 
 ---
 
 ## Liens
 
-- **Documentation complète** : [https://nkaurelien.github.io/webmethods-devops-portfolio](https://nkaurelien.github.io/webmethods-devops-portfolio)
-- **Code source** : [https://github.com/nkaurelien/webmethods-devops-portfolio](https://github.com/nkaurelien/webmethods-devops-portfolio)
-- **LinkedIn** : [https://linkedin.com/in/nkaurelien](https://linkedin.com/in/nkaurelien)
-- **GitHub** : [https://github.com/nkaurelien](https://github.com/nkaurelien)
+- **Documentation complete** : https://nkaurelien.github.io/webmethods-devops-portfolio
+- **Code source** : https://github.com/nkaurelien/webmethods-devops-portfolio
+- **LinkedIn** : https://linkedin.com/in/nkaurelien
+- **GitHub** : https://github.com/nkaurelien
 
 ---
 
-*Document généré le : Février 2025*
+*Document genere le : Fevrier 2025*

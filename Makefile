@@ -56,21 +56,20 @@ docs-build: install-deps
 	mkdocs build --strict
 
 pdf:
-	@echo "Génération du PDF..."
-	@if command -v pandoc >/dev/null 2>&1; then \
-		if command -v pdflatex >/dev/null 2>&1; then \
-			pandoc PORTFOLIO-WEBMETHODS.md -o PORTFOLIO-WEBMETHODS.pdf --pdf-engine=pdflatex; \
-		elif command -v wkhtmltopdf >/dev/null 2>&1; then \
-			pandoc PORTFOLIO-WEBMETHODS.md -o PORTFOLIO-WEBMETHODS.pdf --pdf-engine=wkhtmltopdf; \
-		else \
-			pandoc PORTFOLIO-WEBMETHODS.md -t html -o PORTFOLIO-WEBMETHODS.html; \
-			echo "PDF engine non trouvé. HTML généré à la place."; \
-		fi; \
-		echo "✅ Fichier généré: PORTFOLIO-WEBMETHODS.pdf"; \
-	else \
-		echo "❌ pandoc n'est pas installé. Installez-le avec: brew install pandoc"; \
-		exit 1; \
-	fi
+	@echo "Generation du PDF..."
+	@pandoc PORTFOLIO-WEBMETHODS.md -t html5 -s \
+		--metadata title="Portfolio webMethods" \
+		--css=https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css \
+		-o PORTFOLIO-WEBMETHODS.html
+	@echo ""
+	@echo "HTML genere: PORTFOLIO-WEBMETHODS.html"
+	@echo ""
+	@echo "Pour creer le PDF:"
+	@echo "  1. Cmd + P (Imprimer)"
+	@echo "  2. Destination: Enregistrer en PDF"
+	@echo "  3. Enregistrer sous PORTFOLIO-WEBMETHODS.pdf"
+	@echo ""
+	@command -v open >/dev/null 2>&1 && open PORTFOLIO-WEBMETHODS.html || true
 
 # ============================================================================
 # Docker
